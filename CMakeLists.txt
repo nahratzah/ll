@@ -1,6 +1,5 @@
 cmake_minimum_required (VERSION 2.6)
 project (LL)
-include (CTest)
 
 include_directories (include)
 
@@ -47,8 +46,8 @@ list (APPEND srcs
 if (CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_CLANG)
 	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -fno-omit-frame-pointer")
 	set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g -fno-omit-frame-pointer")
-	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-missing-noreturn -Wno-unused -Wsign-compare -Wuninitialized -Wno-unused-value")
-	set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wextra -Wall -Werror-implicit-function-declaration -Wno-missing-noreturn -Wno-unused-value -Wno-unused-label")
+	set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Wall -Wno-missing-noreturn -Wno-unused -Wno-unused-parameter -Wsign-compare -Wuninitialized -Wno-unused-value")
+	set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wextra -Wall -Werror-implicit-function-declaration -Wno-missing-noreturn -Wno-unused-value -Wno-unused-parameter -Wno-unused-label")
 	if (NOT USE_EMBEDDED_EV)
 		set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -Werror")
 		set (CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Werror")
@@ -85,6 +84,8 @@ install (TARGETS ll
 	ARCHIVE DESTINATION lib)
 install (FILES ${headers} DESTINATION include)
 
+option (BUILD_TESTING "Build regression tests." ON)
 if (BUILD_TESTING)
 	add_subdirectory (test)
+	enable_testing ()
 endif (BUILD_TESTING)
