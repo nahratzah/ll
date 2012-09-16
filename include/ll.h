@@ -18,6 +18,7 @@
 
 #include <stdatomic.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,19 +64,21 @@ size_t		 ll_size(struct ll_head*);
 #define LL_HEAD_INITIALIZER(head)					\
 {{									\
 	{								\
-		ATOMIC_VAR_INIT(&head.ll_head),				\
-		ATOMIC_VAR_INIT(&head.ll_head),				\
-		ATOMIC_VAR_INIT(0)					\
-	}								\
-	ATOMIC_VAR_INIT(0)						\
+		ATOMIC_VAR_INIT((uintptr_t)&head.ll_head),		\
+		ATOMIC_VAR_INIT((uintptr_t)&head.ll_head),		\
+		ATOMIC_VAR_INIT((size_t)0)				\
+	},								\
+	ATOMIC_VAR_INIT((size_t)0)					\
 }}
 
 #define LL_INIT(head)							\
 do {									\
-	atomic_init(&head->ll_head.q.succ, &head->ll_head);		\
-	atomic_init(&head->ll_head.q.pred, &head->ll_head);		\
-	atomic_init(&head->ll_head.q.refcnt, 0);			\
-	atomic_init(&head->ll_head.size, 0);				\
+	atomic_init(&(head)->ll_head.q.succ,				\
+	    (uintptr_t)&(head)->ll_head);				\
+	atomic_init(&(head)->ll_head.q.pred,				\
+	    (uintptr_t)&(head)->ll_head);				\
+	atomic_init(&(head)->ll_head.q.refcnt, 0);			\
+	atomic_init(&(head)->ll_head.size, 0);				\
 } while (0)
 
 #define LL_NEXT(name, head, node)	ll_pred_##name(head, node)
