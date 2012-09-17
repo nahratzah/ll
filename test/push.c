@@ -24,14 +24,11 @@ main()
 	push_front_half(&list);
 	push_back_half(&list);
 
-	fprintf(stderr, "Checking array...");
 	i = 0;
 	LL_FOREACH(o, objlist, &list) {
-		fprintf(stderr, "\t%d", i);
 		assert(o->satelite == i);
 		i++;
 	}
-	fprintf(stderr, "\ni = %d\n", i);
 	assert(i == N);
 
 	return 0;

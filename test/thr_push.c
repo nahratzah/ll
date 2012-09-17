@@ -50,14 +50,11 @@ main()
 	must_succeed(pthread_join(threads[1], NULL), "pthread_join");
 	must_succeed(pthread_barrier_destroy(&barrier), "pthread_barrier_destroy");
 
-	fprintf(stderr, "Checking array...");
 	i = 0;
 	LL_FOREACH(o, objlist, &list) {
 		assert(o->satelite == i);
-		fprintf(stderr, "\t%d", i);
 		i++;
 	}
-	fprintf(stderr, "\ni = %d\n", i);
 	assert(i == N);
 
 	return 0;
@@ -78,7 +75,6 @@ push_front_thread(void *listptr)
 	int i;
 	struct objlist *list = listptr;
 
-	fprintf(stderr, "%s() started...\n", __FUNCTION__);
 	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
 	for (i = N / 2 - 1; i >= 0; i--) {
 		LL_PUSH_FRONT(objlist, list, &data[i]);
@@ -92,7 +88,6 @@ push_back_thread(void *listptr)
 	int i;
 	struct objlist *list = listptr;
 
-	fprintf(stderr, "%s() started...\n", __FUNCTION__);
 	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
 	for (i = N / 2; i < N; i++) {
 		LL_PUSH_BACK(objlist, list, &data[i]);
