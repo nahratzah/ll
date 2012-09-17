@@ -41,8 +41,6 @@ main()
 	for (i = 0; i < N; i++)
 		data[i].satelite = i;
 
-	fprintf(stderr, "pthread create lives at %p\n", &pthread_create);
-
 	must_succeed(pthread_barrier_init(&barrier, NULL, 3), "pthread_barrier_init");
 
 	must_succeed(pthread_create(&threads[0], NULL, &push_front_thread, &list), "pthread_create");
