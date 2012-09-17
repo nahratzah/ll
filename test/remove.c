@@ -1,8 +1,6 @@
 #include "llobj.h"
 #include <assert.h>
 
-#define N 100
-
 struct objlist list = LL_HEAD_INITIALIZER(list);
 struct obj data[N];
 

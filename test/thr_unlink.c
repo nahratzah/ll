@@ -9,7 +9,6 @@
 #endif
 
 #define T 4
-#define N 100
 
 pthread_barrier_t barrier;
 struct obj data[T][N];

@@ -8,8 +8,6 @@
 #include <pthread.h>
 #endif
 
-#define N 100
-
 pthread_barrier_t barrier;
 struct obj data[N];
 

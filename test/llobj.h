@@ -10,4 +10,6 @@ struct obj {
 LL_HEAD(objlist, obj);
 LL_GENERATE(objlist, obj, entry);
 
+#define N 100
+
 #endif /* LLOBJ_H */

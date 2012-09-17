@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define N 100
-
 struct obj data[N];
 
 
