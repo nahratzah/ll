@@ -81,8 +81,8 @@ do {									\
 	atomic_init(&(head)->ll_head.size, 0);				\
 } while (0)
 
-#define LL_NEXT(name, head, node)	ll_pred_##name(head, node)
-#define LL_PREV(name, head, node)	ll_succ_##name(head, node)
+#define LL_NEXT(name, head, node)	ll_succ_##name(head, node)
+#define LL_PREV(name, head, node)	ll_pred_##name(head, node)
 #define LL_FIRST(name, head)		ll_first_##name(head)
 #define LL_LAST(name, head)		ll_last_##name(head)
 #define LL_EMPTY(name, head)		ll_empty_##name(head)
@@ -132,12 +132,12 @@ ll_elem_##name(struct ll_elem *e)					\
 	    offsetof(struct type, member)));				\
 }									\
 static __inline struct type*						\
-ll_pred_##name(struct name *q, struct type *n)				\
+ll_succ_##name(struct name *q, struct type *n)				\
 {									\
 	return ll_elem_##name(ll_succ(&q->ll_head, &n->member));	\
 }									\
 static __inline struct type*						\
-ll_succ_##name(struct name *q, struct type *n)				\
+ll_pred_##name(struct name *q, struct type *n)				\
 {									\
 	return ll_elem_##name(ll_pred(&q->ll_head, &n->member));	\
 }									\
