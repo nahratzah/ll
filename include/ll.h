@@ -109,13 +109,13 @@ do {									\
 	ll_pop_back_##name(head)
 
 #define LL_FOREACH(var, name, head)					\
-	for (var = ll_first_##name(head);				\
-	    var != NULL;						\
-	    var = ll_foreach_succ_##name(var))
+	for ((var) = ll_first_##name(head);				\
+	    (var) != NULL;						\
+	    (var) = ll_foreach_succ_##name((head), (var)))
 #define LL_FOREACH_REVERSE(var, name, head)				\
-	for (var = ll_last_##name(head);				\
-	    var != NULL;						\
-	    var = ll_foreach_pred_##name(var))
+	for ((var) = ll_last_##name(head);				\
+	    (var) != NULL;						\
+	    (var) = ll_foreach_pred_##name((head), (var)))
 
 #define LL_PUSH_FRONT(name, head, node)					\
 	ll_insert_head_##name(head, node)

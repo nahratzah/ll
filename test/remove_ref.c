@@ -30,6 +30,18 @@ main()
 
 		LL_RELEASE(objlist, &list, o);
 	}
+	assert(o == NULL);
+
+	for (i = 0, o = LL_FIRST(objlist, &list);
+	    i < N;
+	    i++, o = next_o) {
+		assert(o != NULL);
+		assert(o->satelite == i);
+
+		next_o = LL_NEXT(objlist, &list, o);
+		LL_UNLINK(objlist, &list, &data[i]);
+	}
+	assert(LL_EMPTY(objlist, &list));
 
 	return 0;
 }
