@@ -19,6 +19,17 @@ void *push_front_thread(void*);
 void *push_back_thread(void*);
 
 
+static __inline int
+barrier_wait(pthread_barrier_t *barrier)
+{
+	int rv = pthread_barrier_wait(barrier);
+
+	if (rv == PTHREAD_BARRIER_SERIAL_THREAD)
+		rv = 0;
+	return rv;
+}
+
+
 int
 main()
 {
@@ -37,17 +48,20 @@ main()
 	must_succeed(pthread_create(&threads[0], NULL, &push_front_thread, &list), "pthread_create");
 	must_succeed(pthread_create(&threads[1], NULL, &push_back_thread, &list), "pthread_create");
 
-	must_succeed(pthread_barrier_wait(&barrier), "pthread_barrier_wait");
+	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
 
 	must_succeed(pthread_join(threads[0], NULL), "pthread_join");
 	must_succeed(pthread_join(threads[1], NULL), "pthread_join");
 	must_succeed(pthread_barrier_destroy(&barrier), "pthread_barrier_destroy");
 
+	fprintf(stderr, "Checking array...");
 	i = 0;
 	LL_FOREACH(o, objlist, &list) {
 		assert(o->satelite == i);
+		fprintf(stderr, "\t%d", i);
 		i++;
 	}
+	fprintf(stderr, "\ni = %d\n", i);
 	assert(i == N);
 
 	return 0;
@@ -59,8 +73,7 @@ must_succeed(int error, const char *what)
 	if (error != 0) {
 		fprintf(stderr, "%s failed: %s\n", what, strerror(error));
 		abort();
-	} else
-		fprintf(stderr, "%s passed\n", what);
+	}
 }
 
 void*
@@ -70,9 +83,11 @@ push_front_thread(void *listptr)
 	struct objlist *list = listptr;
 
 	fprintf(stderr, "%s() started...\n", __FUNCTION__);
-	must_succeed(pthread_barrier_wait(&barrier), "pthread_barrier_wait");
-	for (i = N / 2 - 1; i >= 0; i--)
+	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
+	for (i = N / 2 - 1; i >= 0; i--) {
 		LL_PUSH_FRONT(objlist, list, &data[i]);
+		LL_RELEASE(objlist, list, &data[i]);
+	}
 	return NULL;
 }
 void*
@@ -82,8 +97,10 @@ push_back_thread(void *listptr)
 	struct objlist *list = listptr;
 
 	fprintf(stderr, "%s() started...\n", __FUNCTION__);
-	must_succeed(pthread_barrier_wait(&barrier), "pthread_barrier_wait");
-	for (i = N / 2; i < N; i++)
+	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
+	for (i = N / 2; i < N; i++) {
 		LL_PUSH_BACK(objlist, list, &data[i]);
+		LL_RELEASE(objlist, list, &data[i]);
+	}
 	return NULL;
 }
