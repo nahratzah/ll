@@ -288,7 +288,7 @@ pred(struct ll_head *q_head, struct ll_elem *n)
 					deref_acquire(ps, 1);
 					ptr_clear_deref(&n->pred);
 					deref_release(q_head, p, 2);
-					p = ps;
+					p = flag_combine(ps, p_);
 				} else {
 					/* cas failed */
 					deref_release(q_head, ps, 1);
@@ -333,7 +333,8 @@ pred(struct ll_head *q_head, struct ll_elem *n)
 		}
 	}
 
-	return p;
+	return flag_combine(p, (struct ll_elem*)atomic_load_explicit(&n->pred,
+	    memory_order_relaxed));
 }
 
 /*
