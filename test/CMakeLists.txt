@@ -12,6 +12,10 @@ add_executable (prev prev.c llobj.h)
 target_link_libraries (prev ll)
 add_test (prev prev)
 
+add_executable (push push.c llobj.h)
+target_link_libraries (push ll)
+add_test (push push)
+
 add_executable (remove remove.c llobj.h)
 target_link_libraries (remove ll)
 add_test (remove remove)
