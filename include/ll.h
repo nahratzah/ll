@@ -66,7 +66,7 @@ size_t		 ll_size(struct ll_head*);
 	{								\
 		ATOMIC_VAR_INIT((uintptr_t)&head.ll_head),		\
 		ATOMIC_VAR_INIT((uintptr_t)&head.ll_head),		\
-		ATOMIC_VAR_INIT((size_t)0)				\
+		ATOMIC_VAR_INIT((size_t)2)				\
 	},								\
 	ATOMIC_VAR_INIT((size_t)0)					\
 }}
@@ -77,7 +77,7 @@ do {									\
 	    (uintptr_t)&(head)->ll_head);				\
 	atomic_init(&(head)->ll_head.q.pred,				\
 	    (uintptr_t)&(head)->ll_head);				\
-	atomic_init(&(head)->ll_head.q.refcnt, 0);			\
+	atomic_init(&(head)->ll_head.q.refcnt, 2);			\
 	atomic_init(&(head)->ll_head.size, 0);				\
 } while (0)
 

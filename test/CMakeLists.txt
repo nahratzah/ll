@@ -4,9 +4,9 @@ add_executable (init init.c llobj.h)
 target_link_libraries (init ll)
 add_test (init init)
 
-add_executable (insert insert.c llobj.h)
-target_link_libraries (insert ll)
-add_test (insert insert)
+add_executable (push_front push_front.c llobj.h)
+target_link_libraries (push_front ll)
+add_test (push_front push_front)
 
 add_executable (prev prev.c llobj.h)
 target_link_libraries (prev ll)
