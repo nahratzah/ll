@@ -8,6 +8,10 @@ add_executable (insert insert.c llobj.h)
 target_link_libraries (insert ll)
 add_test (insert insert)
 
+add_executable (prev prev.c llobj.h)
+target_link_libraries (prev ll)
+add_test (prev prev)
+
 add_executable (remove remove.c llobj.h)
 target_link_libraries (remove ll)
 add_test (remove remove)
