@@ -40,7 +40,12 @@ if (Threads_FOUND)
 endif (Threads_FOUND)
 if (Threads_FOUND)
 	add_definitions (-pthread)
+
 	add_executable (thr_push thr_push.c llobj.h)
 	target_link_libraries (thr_push ll ${CMAKE_THREAD_LIBS_INIT})
 	add_test (thr_push thr_push)
+
+	add_executable (thr_unlink thr_unlink.c llobj.h)
+	target_link_libraries (thr_unlink ll ${CMAKE_THREAD_LIBS_INIT})
+	add_test (thr_unlink thr_unlink)
 endif (Threads_FOUND)
