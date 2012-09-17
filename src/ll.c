@@ -321,9 +321,9 @@ pred(struct ll_head *q_head, struct ll_elem *n)
 		p_ = p;
 		if (ptr_cas(&n->pred, &p_, pp)) {
 			/* cas succeeded */
-			deref_release(q_head, p, 2);
 			deref_acquire(pp, 1);
 			ptr_clear_deref(&n->pred);
+			deref_release(q_head, p, 2);
 			p = pp;
 		} else {
 			/* cas failed */
@@ -375,8 +375,8 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 	    memory_order_relaxed);
 	atomic_store_explicit(&n->succ, (uintptr_t)s | FLAGGED,
 	    memory_order_relaxed);
-	deref_acquire(p, 1);
-	deref_acquire(s, 1);
+	deref_acquire(p, 1);	/* Because n->pred = p. */
+	deref_acquire(s, 1);	/* Because n->succ = s. */
 
 	/* Load bits in p->succ. */
 	ps = deref(&p->succ);
@@ -413,14 +413,15 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 	deref_acquire(n, 1);
 	ptr_clear_deref(&p->succ);
 	/* Forget ps. */
-	deref_release(q_head, ps, 1);
+	deref_release(q_head, ps, 2);	/* Once for ps, once for p->succ. */
 	ps = NULL;
 
 	/* Fix pred pointer of s. */
 	deref_release(q_head, pred(q_head, s), 1);
 
-	/* Clear delete block. */
+	/* Update list size. */
 	atomic_fetch_add_explicit(&q_head->size, 1, memory_order_relaxed);
+	/* Clear delete block. */
 	atomic_fetch_and_explicit(&n->succ, ~FLAGGED, memory_order_relaxed);
 
 	return 1;
@@ -430,9 +431,7 @@ fail:
 	atomic_store_explicit(&n->succ, 0, memory_order_relaxed);
 	deref_release(q_head, p, 1);
 	deref_release(q_head, s, 1);
-
-	if (ps != NULL)
-		deref_release(q_head, ps, 1);
+	deref_release(q_head, ps, 1);
 	return 0;
 }
 
