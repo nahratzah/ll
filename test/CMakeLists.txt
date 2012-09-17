@@ -8,6 +8,10 @@ add_executable (push_front push_front.c llobj.h)
 target_link_libraries (push_front ll)
 add_test (push_front push_front)
 
+add_executable (push_back push_back.c llobj.h)
+target_link_libraries (push_back ll)
+add_test (push_back push_back)
+
 add_executable (prev prev.c llobj.h)
 target_link_libraries (prev ll)
 add_test (prev prev)
