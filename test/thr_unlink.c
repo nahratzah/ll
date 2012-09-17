@@ -17,7 +17,8 @@ struct objlist list = LL_HEAD_INITIALIZER(list);
 
 
 void must_succeed(int, const char*);
-void *rm_thread(void*);
+void *rm_thread_forward(void*);
+void *rm_thread_backward(void*);
 
 
 static __inline int
@@ -45,15 +46,20 @@ main()
 		}
 	}
 
-	must_succeed(pthread_barrier_init(&barrier, NULL, T + 1), "pthread_barrier_init");
+	must_succeed(pthread_barrier_init(&barrier, NULL, T + 1),
+	    "pthread_barrier_init");
 
-	for (i = 0; i < T; i++)
-		must_succeed(pthread_create(&threads[i], NULL, &rm_thread, data[i]), "pthread_create");
+	for (i = 0; i < T; i++) {
+		must_succeed(pthread_create(&threads[i], NULL,
+		    (i < N / 2 ? &rm_thread_forward : &rm_thread_backward),
+		    data[i]), "pthread_create");
+	}
 	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
 
 	for (i = 0; i < T; i++)
 		must_succeed(pthread_join(threads[i], NULL), "pthread_join");
-	must_succeed(pthread_barrier_destroy(&barrier), "pthread_barrier_destroy");
+	must_succeed(pthread_barrier_destroy(&barrier),
+	    "pthread_barrier_destroy");
 
 	assert(LL_EMPTY(objlist, &list));
 	return 0;
@@ -68,8 +74,16 @@ must_succeed(int error, const char *what)
 	}
 }
 
+void
+unlink_fail(struct obj *o)
+{
+	fprintf(stderr, "Failed to remove object[%d][%d]\n",
+	    o->satelite / N, o->satelite % N);
+	abort();
+}
+
 void*
-rm_thread(void *objs_ptr)
+rm_thread_forward(void *objs_ptr)
 {
 	struct obj *objs = objs_ptr;
 	int i;
@@ -79,10 +93,25 @@ rm_thread(void *objs_ptr)
 	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
 
 	for (i = 0; i < N; i++) {
-		if (!LL_UNLINK(objlist, &list, &objs[i])) {
-			fprintf(stderr, "Failed to remove object[%d][%d]\n", objs[i].satelite / N, objs[i].satelite % N);
-			abort();
-		}
+		if (!LL_UNLINK(objlist, &list, &objs[i]))
+			unlink_fail(&objs[i]);
+	}
+	return NULL;
+}
+
+void*
+rm_thread_backward(void *objs_ptr)
+{
+	struct obj *objs = objs_ptr;
+	int i;
+
+	for (i = 0; i < N; i++)
+		LL_REF(objlist, &list, &objs[i]);
+	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
+
+	for (i = N - 1; i >= 0; i--) {
+		if (!LL_UNLINK(objlist, &list, &objs[i]))
+			unlink_fail(&objs[i]);
 	}
 	return NULL;
 }
