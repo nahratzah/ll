@@ -98,8 +98,11 @@ deref_acquire(struct ll_elem *e, size_t count)
 static __inline void
 deref_release(struct ll_head *q_head, struct ll_elem *e, size_t count)
 {
-	atomic_fetch_sub_explicit(&ptr_clear(e)->refcnt, count,
+	size_t old;
+
+	old = atomic_fetch_sub_explicit(&ptr_clear(e)->refcnt, count,
 	    memory_order_relaxed);
+	assert(old >= count);
 }
 
 /*
@@ -214,7 +217,7 @@ succ(struct ll_head *q_head, struct ll_elem *n)
 
 	q = &q_head->q;
 	assert(q == ptr_clear(q));
-	assert(n == ptr_clear(n));
+	n = ptr_clear(n);
 
 	s = deref(&n->succ);
 	while (deleted(s)) {
@@ -266,7 +269,7 @@ pred(struct ll_head *q_head, struct ll_elem *n)
 
 	q = &q_head->q;
 	assert(q == ptr_clear(q));
-	assert(n == ptr_clear(n));
+	n = ptr_clear(n);
 
 	p = deref(&n->pred);
 	for (;;) {
@@ -278,7 +281,7 @@ pred(struct ll_head *q_head, struct ll_elem *n)
 		 */
 		if (!deleted_ptr(p)) {
 			ps = succ(q_head, p);
-			while (ps != n && !deleted_ptr(p)) {
+			while (ptr_clear(ps) != n && !deleted_ptr(p)) {
 				p_ = p;
 				if (ptr_cas(&n->pred, &p_, ps)) {
 					/* cas succeeded */
@@ -320,6 +323,7 @@ pred(struct ll_head *q_head, struct ll_elem *n)
 			/* cas succeeded */
 			deref_release(q_head, p, 2);
 			deref_acquire(pp, 1);
+			ptr_clear_deref(&n->pred);
 			p = pp;
 		} else {
 			/* cas failed */
@@ -413,7 +417,7 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 	ps = NULL;
 
 	/* Fix pred pointer of s. */
-	deref_release(q_head, pred(q_head, ptr_clear(s)), 1);
+	deref_release(q_head, pred(q_head, s), 1);
 
 	/* Clear delete block. */
 	atomic_fetch_add_explicit(&q_head->size, 1, memory_order_relaxed);
@@ -433,6 +437,52 @@ fail:
 }
 
 /*
+ * Acquire the lock on p->succ.
+ *
+ * Succeeds once the DEREF bit is set on p->succ and ptr_clear(p->succ) == expect_s.
+ */
+static int
+unlink_ps_lock(struct ll_head *q_head, struct ll_elem *p, struct ll_elem *expect_s)
+{
+	struct ll_elem	*ps;
+
+	p = ptr_clear(p);
+	expect_s = ptr_clear(expect_s);
+
+	/*
+	 * Try to acquire the deref lock, but stop once p->succ doesn't point at
+	 * expect_s.
+	 */
+	do {
+		ps = (struct ll_elem*)atomic_fetch_or_explicit(&p->succ, DEREF,
+		    memory_order_relaxed);
+		if (ptr_clear(ps) != ptr_clear(expect_s))
+			break;
+		SPINWAIT();
+	} while (((uintptr_t)ps & DEREF) &&
+	    ptr_clear(ps) == expect_s);
+
+	/*
+	 * If the pointers are the same, we acquired the DEREF bit and p->succ
+	 * has the expected successor.
+	 */
+	if (ptr_clear(ps) == expect_s) {
+		assert(atomic_load_explicit(&p->succ, memory_order_relaxed) &
+		    DEREF);
+		return 1;
+	}
+
+	/*
+	 * If we acquired the DEREF bit (i.e. we set it while it wasn't already
+	 * set by another thread) clear it now.
+	 */
+	if (!((uintptr_t)ps & DEREF))
+		ptr_clear_deref(&p->succ);
+
+	return 0;
+}
+
+/*
  * Unlink n from the queue.
  *
  * Returns true if the deletion succeeded.  Fails if another thread is
@@ -441,12 +491,12 @@ fail:
 static int
 unlink(struct ll_head *q_head, struct ll_elem *n)
 {
-	struct ll_elem	*q, *p, *p_, *ps, *i, *i_;
+	struct ll_elem	*q, *p, *p_, *i, *i_;
 
 	q = &q_head->q;
 	/* Argument validation. */
 	assert(q == ptr_clear(q));
-	assert(n == ptr_clear(n));
+	n = ptr_clear(n);
 
 	/* Ensure n is not halfway an insert. */
 	while (atomic_load_explicit(&n->succ, memory_order_relaxed) & FLAGGED)
@@ -467,24 +517,11 @@ restart:
 		}
 
 		/* Lock down p->succ and ensure it points at n. */
-		for (;;) {
-			ps = (struct ll_elem*)atomic_fetch_or_explicit(
-			    &ptr_clear(p)->succ, DEREF, memory_order_relaxed);
-			if (ptr_clear(ps) != n) {
-				if (!((uintptr_t)ps & DEREF))
-					ptr_clear_deref(&ptr_clear(p)->succ);
-				break;		/* GUARD: failure. */
-			}
-			if (!((uintptr_t)ps & DEREF))
-				break;		/* GUARD: succes. */
-			SPINWAIT();
-		}
-		/*
-		 * Loop succeeded in locking down ps, iff ps == n.
-		 */
-		if (ptr_clear(ps) == n) {
+		if (unlink_ps_lock(q_head, p, n)) {
 			assert(atomic_load_explicit(&ptr_clear(p)->succ,
 			    memory_order_relaxed) & DEREF);
+			assert(ptr_clear((struct ll_elem*)atomic_load_explicit(
+			    &ptr_clear(p)->succ, memory_order_relaxed)) == n);
 			break;			/* GUARD */
 		}
 
@@ -947,9 +984,9 @@ ll_insert_tail(struct ll_head *q_head, struct ll_elem *n)
 	 * We now have:
 	 * - p -- the predecessor of the insert position
 	 * - q -- the successor of the insert position
-	 * - n -- the node we need to insert between p and s
+	 * - n -- the node we need to insert between p and q
 	 *
-	 * Note that both p may be deleted by the time we read this
+	 * Note that p may be deleted by the time we read this
 	 * comment.
 	 */
 	while (!insert_between(q_head, n, p, q)) {
