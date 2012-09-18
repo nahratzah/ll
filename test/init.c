@@ -1,5 +1,4 @@
 #include "llobj.h"
-#include <assert.h>
 
 struct objlist list = LL_HEAD_INITIALIZER(list);
 

@@ -1,7 +1,12 @@
 #ifndef LLOBJ_H
 #define LLOBJ_H
 
+#ifdef NDEBUG
+#undef NDEBUG
+#endif
+
 #include <ll.h>
+#include <assert.h>
 
 struct obj {
 	int satelite;
