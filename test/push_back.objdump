@@ -1,0 +1,240 @@
+
+test/push_back.amd64.o:     file format elf64-x86-64
+
+Disassembly of section .text:
+
+0000000000000000 <main>:
+#define REFCNT(obj_entry)	(*(size_t*)&(obj_entry)->refcnt)
+
+int
+main()
+{
+   0:	55                   	push   %rbp
+   1:	48 89 e5             	mov    %rsp,%rbp
+   4:	48 83 ec 20          	sub    $0x20,%rsp
+   8:	c7 45 fc 00 00 00 00 	movl   $0x0,0xfffffffffffffffc(%rbp)
+	int i;
+	struct obj *o, *next_o = NULL;
+   f:	48 c7 45 e8 00 00 00 	movq   $0x0,0xffffffffffffffe8(%rbp)
+  16:	00 
+
+	for (i = 0; i < N; i++)
+  17:	c7 45 f8 00 00 00 00 	movl   $0x0,0xfffffffffffffff8(%rbp)
+  1e:	81 7d f8 e8 03 00 00 	cmpl   $0x3e8,0xfffffffffffffff8(%rbp)
+  25:	0f 8d 28 00 00 00    	jge    53 <main+0x53>
+  2b:	48 8d 04 25 00 00 00 	lea    0x0,%rax
+  32:	00 
+			2f: R_X86_64_32S	data
+		data[i].satelite = i;
+  33:	8b 4d f8             	mov    0xfffffffffffffff8(%rbp),%ecx
+  36:	48 63 55 f8          	movslq 0xfffffffffffffff8(%rbp),%rdx
+  3a:	48 c1 e2 05          	shl    $0x5,%rdx
+  3e:	48 01 d0             	add    %rdx,%rax
+  41:	89 08                	mov    %ecx,(%rax)
+  43:	8b 45 f8             	mov    0xfffffffffffffff8(%rbp),%eax
+  46:	05 01 00 00 00       	add    $0x1,%eax
+  4b:	89 45 f8             	mov    %eax,0xfffffffffffffff8(%rbp)
+  4e:	e9 cb ff ff ff       	jmpq   1e <main+0x1e>
+
+	for (i = 0; i < N; i++) {
+  53:	c7 45 f8 00 00 00 00 	movl   $0x0,0xfffffffffffffff8(%rbp)
+  5a:	81 7d f8 e8 03 00 00 	cmpl   $0x3e8,0xfffffffffffffff8(%rbp)
+  61:	0f 8d 15 00 00 00    	jge    7c <main+0x7c>
+		LL_PUSH_BACK(objlist, &list, &data[i]);
+		LL_RELEASE(objlist, &list, &data[i]);
+	}
+  67:	e9 00 00 00 00       	jmpq   6c <main+0x6c>
+  6c:	8b 45 f8             	mov    0xfffffffffffffff8(%rbp),%eax
+  6f:	05 01 00 00 00       	add    $0x1,%eax
+  74:	89 45 f8             	mov    %eax,0xfffffffffffffff8(%rbp)
+  77:	e9 de ff ff ff       	jmpq   5a <main+0x5a>
+
+	/*
+	 * Verify queue is correct with respect to all next pointers.
+	 */
+	assert(SUCC(&list.ll_head.q) == &data[0].entry);
+	for (i = 0; i < N - 1; i++)
+  7c:	c7 45 f8 00 00 00 00 	movl   $0x0,0xfffffffffffffff8(%rbp)
+  83:	81 7d f8 e7 03 00 00 	cmpl   $0x3e7,0xfffffffffffffff8(%rbp)
+  8a:	0f 8d 78 00 00 00    	jge    108 <main+0x108>
+  90:	48 8d 04 25 00 00 00 	lea    0x0,%rax
+  97:	00 
+			94: R_X86_64_32S	data
+		assert(SUCC(&data[i].entry) == &data[i + 1].entry);
+  98:	48 63 4d f8          	movslq 0xfffffffffffffff8(%rbp),%rcx
+  9c:	48 c1 e1 05          	shl    $0x5,%rcx
+  a0:	48 89 c2             	mov    %rax,%rdx
+  a3:	48 01 ca             	add    %rcx,%rdx
+  a6:	48 8b 4a 08          	mov    0x8(%rdx),%rcx
+  aa:	8b 75 f8             	mov    0xfffffffffffffff8(%rbp),%esi
+  ad:	81 c6 01 00 00 00    	add    $0x1,%esi
+  b3:	48 63 d6             	movslq %esi,%rdx
+  b6:	48 c1 e2 05          	shl    $0x5,%rdx
+  ba:	48 01 d0             	add    %rdx,%rax
+  bd:	48 05 08 00 00 00    	add    $0x8,%rax
+  c3:	48 39 c1             	cmp    %rax,%rcx
+  c6:	0f 85 05 00 00 00    	jne    d1 <main+0xd1>
+  cc:	e9 22 00 00 00       	jmpq   f3 <main+0xf3>
+  d1:	48 8d 3c 25 00 00 00 	lea    0x0,%rdi
+  d8:	00 
+			d5: R_X86_64_32S	.rodata.str1.1
+  d9:	be 1f 00 00 00       	mov    $0x1f,%esi
+  de:	48 8d 14 25 00 00 00 	lea    0x0,%rdx
+  e5:	00 
+			e2: R_X86_64_32S	.rodata.str1.1+0x11
+  e6:	48 8d 0c 25 00 00 00 	lea    0x0,%rcx
+  ed:	00 
+			ea: R_X86_64_32S	.rodata.str1.1+0x16
+  ee:	e8 00 00 00 00       	callq  f3 <main+0xf3>
+			ef: R_X86_64_PC32	__assert2+0xfffffffffffffffc
+  f3:	e9 00 00 00 00       	jmpq   f8 <main+0xf8>
+  f8:	8b 45 f8             	mov    0xfffffffffffffff8(%rbp),%eax
+  fb:	05 01 00 00 00       	add    $0x1,%eax
+ 100:	89 45 f8             	mov    %eax,0xfffffffffffffff8(%rbp)
+ 103:	e9 7b ff ff ff       	jmpq   83 <main+0x83>
+	assert(SUCC(&data[N - 1].entry) == &list.ll_head.q);
+
+	/*
+	 * Verify queue is correct with respect to all prev pointers.
+	 */
+	assert(PRED(&list.ll_head.q) == &data[N - 1].entry);
+	for (i = 0; i < N - 1; i++)
+ 108:	c7 45 f8 00 00 00 00 	movl   $0x0,0xfffffffffffffff8(%rbp)
+ 10f:	81 7d f8 e7 03 00 00 	cmpl   $0x3e7,0xfffffffffffffff8(%rbp)
+ 116:	0f 8d 78 00 00 00    	jge    194 <main+0x194>
+ 11c:	48 8d 04 25 00 00 00 	lea    0x0,%rax
+ 123:	00 
+			120: R_X86_64_32S	data
+		assert(PRED(&data[i + 1].entry) == &data[i].entry);
+ 124:	8b 4d f8             	mov    0xfffffffffffffff8(%rbp),%ecx
+ 127:	81 c1 01 00 00 00    	add    $0x1,%ecx
+ 12d:	48 63 d1             	movslq %ecx,%rdx
+ 130:	48 c1 e2 05          	shl    $0x5,%rdx
+ 134:	48 89 c6             	mov    %rax,%rsi
+ 137:	48 01 d6             	add    %rdx,%rsi
+ 13a:	48 8b 56 10          	mov    0x10(%rsi),%rdx
+ 13e:	48 63 75 f8          	movslq 0xfffffffffffffff8(%rbp),%rsi
+ 142:	48 c1 e6 05          	shl    $0x5,%rsi
+ 146:	48 01 f0             	add    %rsi,%rax
+ 149:	48 05 08 00 00 00    	add    $0x8,%rax
+ 14f:	48 39 c2             	cmp    %rax,%rdx
+ 152:	0f 85 05 00 00 00    	jne    15d <main+0x15d>
+ 158:	e9 22 00 00 00       	jmpq   17f <main+0x17f>
+ 15d:	48 8d 3c 25 00 00 00 	lea    0x0,%rdi
+ 164:	00 
+			161: R_X86_64_32S	.rodata.str1.1
+ 165:	be 27 00 00 00       	mov    $0x27,%esi
+ 16a:	48 8d 14 25 00 00 00 	lea    0x0,%rdx
+ 171:	00 
+			16e: R_X86_64_32S	.rodata.str1.1+0x11
+ 172:	48 8d 0c 25 00 00 00 	lea    0x0,%rcx
+ 179:	00 
+			176: R_X86_64_32S	.rodata.str1.1+0x41
+ 17a:	e8 00 00 00 00       	callq  17f <main+0x17f>
+			17b: R_X86_64_PC32	__assert2+0xfffffffffffffffc
+ 17f:	e9 00 00 00 00       	jmpq   184 <main+0x184>
+ 184:	8b 45 f8             	mov    0xfffffffffffffff8(%rbp),%eax
+ 187:	05 01 00 00 00       	add    $0x1,%eax
+ 18c:	89 45 f8             	mov    %eax,0xfffffffffffffff8(%rbp)
+ 18f:	e9 7b ff ff ff       	jmpq   10f <main+0x10f>
+	assert(PRED(&data[0].entry) == &list.ll_head.q);
+
+	/*
+	 * Verify queue is correct with respect to all refcounts.
+	 */
+	assert(REFCNT(&list.ll_head.q) == 2);
+	for (i = 0; i < N - 1; i++)
+ 194:	c7 45 f8 00 00 00 00 	movl   $0x0,0xfffffffffffffff8(%rbp)
+ 19b:	81 7d f8 e7 03 00 00 	cmpl   $0x3e7,0xfffffffffffffff8(%rbp)
+ 1a2:	0f 8d 65 00 00 00    	jge    20d <main+0x20d>
+ 1a8:	48 8d 04 25 00 00 00 	lea    0x0,%rax
+ 1af:	00 
+			1ac: R_X86_64_32S	data
+		assert(REFCNT(&data[i + 1].entry) == 2);
+ 1b0:	8b 4d f8             	mov    0xfffffffffffffff8(%rbp),%ecx
+ 1b3:	81 c1 01 00 00 00    	add    $0x1,%ecx
+ 1b9:	48 63 d1             	movslq %ecx,%rdx
+ 1bc:	48 c1 e2 05          	shl    $0x5,%rdx
+ 1c0:	48 01 d0             	add    %rdx,%rax
+ 1c3:	48 81 78 18 02 00 00 	cmpq   $0x2,0x18(%rax)
+ 1ca:	00 
+ 1cb:	0f 85 05 00 00 00    	jne    1d6 <main+0x1d6>
+ 1d1:	e9 22 00 00 00       	jmpq   1f8 <main+0x1f8>
+ 1d6:	48 8d 3c 25 00 00 00 	lea    0x0,%rdi
+ 1dd:	00 
+			1da: R_X86_64_32S	.rodata.str1.1
+ 1de:	be 2f 00 00 00       	mov    $0x2f,%esi
+ 1e3:	48 8d 14 25 00 00 00 	lea    0x0,%rdx
+ 1ea:	00 
+			1e7: R_X86_64_32S	.rodata.str1.1+0x11
+ 1eb:	48 8d 0c 25 00 00 00 	lea    0x0,%rcx
+ 1f2:	00 
+			1ef: R_X86_64_32S	.rodata.str1.1+0x6c
+ 1f3:	e8 00 00 00 00       	callq  1f8 <main+0x1f8>
+			1f4: R_X86_64_PC32	__assert2+0xfffffffffffffffc
+ 1f8:	e9 00 00 00 00       	jmpq   1fd <main+0x1fd>
+ 1fd:	8b 45 f8             	mov    0xfffffffffffffff8(%rbp),%eax
+ 200:	05 01 00 00 00       	add    $0x1,%eax
+ 205:	89 45 f8             	mov    %eax,0xfffffffffffffff8(%rbp)
+ 208:	e9 8e ff ff ff       	jmpq   19b <main+0x19b>
+
+
+	for (i = 0, o = LL_FIRST(objlist, &list);
+ 20d:	e9 00 00 00 00       	jmpq   212 <main+0x212>
+ 212:	81 7d f8 e8 03 00 00 	cmpl   $0x3e8,0xfffffffffffffff8(%rbp)
+ 219:	0f 8d 88 00 00 00    	jge    2a7 <main+0x2a7>
+	    i < N;
+	    i++, o = next_o) {
+		assert(o != NULL);
+ 21f:	48 81 7d f0 00 00 00 	cmpq   $0x0,0xfffffffffffffff0(%rbp)
+ 226:	00 
+ 227:	0f 84 05 00 00 00    	je     232 <main+0x232>
+ 22d:	e9 22 00 00 00       	jmpq   254 <main+0x254>
+ 232:	48 8d 3c 25 00 00 00 	lea    0x0,%rdi
+ 239:	00 
+			236: R_X86_64_32S	.rodata.str1.1
+ 23a:	be 35 00 00 00       	mov    $0x35,%esi
+ 23f:	48 8d 14 25 00 00 00 	lea    0x0,%rdx
+ 246:	00 
+			243: R_X86_64_32S	.rodata.str1.1+0x11
+ 247:	48 8d 0c 25 00 00 00 	lea    0x0,%rcx
+ 24e:	00 
+			24b: R_X86_64_32S	.rodata.str1.1+0x8c
+ 24f:	e8 00 00 00 00       	callq  254 <main+0x254>
+			250: R_X86_64_PC32	__assert2+0xfffffffffffffffc
+		assert(o->satelite == i);
+ 254:	48 8b 45 f0          	mov    0xfffffffffffffff0(%rbp),%rax
+ 258:	8b 08                	mov    (%rax),%ecx
+ 25a:	3b 4d f8             	cmp    0xfffffffffffffff8(%rbp),%ecx
+ 25d:	0f 85 05 00 00 00    	jne    268 <main+0x268>
+ 263:	e9 22 00 00 00       	jmpq   28a <main+0x28a>
+ 268:	48 8d 3c 25 00 00 00 	lea    0x0,%rdi
+ 26f:	00 
+			26c: R_X86_64_32S	.rodata.str1.1
+ 270:	be 36 00 00 00       	mov    $0x36,%esi
+ 275:	48 8d 14 25 00 00 00 	lea    0x0,%rdx
+ 27c:	00 
+			279: R_X86_64_32S	.rodata.str1.1+0x11
+ 27d:	48 8d 0c 25 00 00 00 	lea    0x0,%rcx
+ 284:	00 
+			281: R_X86_64_32S	.rodata.str1.1+0x96
+ 285:	e8 00 00 00 00       	callq  28a <main+0x28a>
+			286: R_X86_64_PC32	__assert2+0xfffffffffffffffc
+
+		next_o = LL_NEXT(objlist, &list, o);
+
+		LL_RELEASE(objlist, &list, o);
+	}
+ 28a:	e9 00 00 00 00       	jmpq   28f <main+0x28f>
+ 28f:	8b 45 f8             	mov    0xfffffffffffffff8(%rbp),%eax
+ 292:	05 01 00 00 00       	add    $0x1,%eax
+ 297:	89 45 f8             	mov    %eax,0xfffffffffffffff8(%rbp)
+ 29a:	48 8b 4d e8          	mov    0xffffffffffffffe8(%rbp),%rcx
+ 29e:	48 89 4d f0          	mov    %rcx,0xfffffffffffffff0(%rbp)
+ 2a2:	e9 6b ff ff ff       	jmpq   212 <main+0x212>
+ 2a7:	b8 00 00 00 00       	mov    $0x0,%eax
+
+	return 0;
+ 2ac:	48 83 c4 20          	add    $0x20,%rsp
+ 2b0:	5d                   	pop    %rbp
+ 2b1:	c3                   	retq   

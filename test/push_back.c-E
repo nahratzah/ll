@@ -1,0 +1,919 @@
+# 1 "test/push_back.c"
+# 1 "test/push_back.c" 1
+# 1 "<built-in>" 1
+# 1 "<built-in>" 3
+# 151 "<built-in>" 3
+# 1 "<command line>" 1
+# 1 "<built-in>" 2
+# 1 "test/push_back.c" 2
+# 1 "test/llobj.h" 1
+
+
+
+
+
+
+
+# 1 "include/ll.h" 1
+# 19 "include/ll.h"
+# 1 "/usr/include/stdatomic.h" 1 3 4
+# 33 "/usr/include/stdatomic.h" 3 4
+# 1 "/usr/include/sys/cdefs.h" 1 3 4
+# 41 "/usr/include/sys/cdefs.h" 3 4
+# 1 "/usr/include/machine/cdefs.h" 1 3 4
+# 42 "/usr/include/sys/cdefs.h" 2 3 4
+# 34 "/usr/include/stdatomic.h" 2 3 4
+# 1 "/usr/include/sys/_types.h" 1 3 4
+# 37 "/usr/include/sys/_types.h" 3 4
+# 1 "/usr/include/machine/_types.h" 1 3 4
+# 59 "/usr/include/machine/_types.h" 3 4
+typedef signed char __int8_t;
+typedef unsigned char __uint8_t;
+typedef short __int16_t;
+typedef unsigned short __uint16_t;
+typedef int __int32_t;
+typedef unsigned int __uint32_t;
+
+typedef long long __int64_t;
+
+typedef unsigned long long __uint64_t;
+
+
+typedef __int8_t __int_least8_t;
+typedef __uint8_t __uint_least8_t;
+typedef __int16_t __int_least16_t;
+typedef __uint16_t __uint_least16_t;
+typedef __int32_t __int_least32_t;
+typedef __uint32_t __uint_least32_t;
+typedef __int64_t __int_least64_t;
+typedef __uint64_t __uint_least64_t;
+
+
+typedef __int32_t __int_fast8_t;
+typedef __uint32_t __uint_fast8_t;
+typedef __int32_t __int_fast16_t;
+typedef __uint32_t __uint_fast16_t;
+typedef __int32_t __int_fast32_t;
+typedef __uint32_t __uint_fast32_t;
+typedef __int64_t __int_fast64_t;
+typedef __uint64_t __uint_fast64_t;
+# 103 "/usr/include/machine/_types.h" 3 4
+typedef long __intptr_t;
+typedef unsigned long __uintptr_t;
+
+
+typedef __int64_t __intmax_t;
+typedef __uint64_t __uintmax_t;
+
+
+typedef long __register_t;
+
+
+typedef unsigned long __vaddr_t;
+typedef unsigned long __paddr_t;
+typedef unsigned long __vsize_t;
+typedef unsigned long __psize_t;
+
+
+typedef int __clock_t;
+typedef int __clockid_t;
+typedef double __double_t;
+typedef float __float_t;
+typedef long long __off_t;
+typedef long __ptrdiff_t;
+typedef unsigned long __size_t;
+typedef long __ssize_t;
+typedef int __time_t;
+typedef int __timer_t;
+
+typedef __builtin_va_list __va_list;
+
+
+
+
+
+
+typedef int __wchar_t;
+
+
+
+typedef int __wint_t;
+typedef int __rune_t;
+typedef void * __wctrans_t;
+typedef void * __wctype_t;
+# 38 "/usr/include/sys/_types.h" 2 3 4
+
+typedef unsigned long __cpuid_t;
+typedef __int32_t __dev_t;
+typedef __uint32_t __fixpt_t;
+typedef __uint32_t __gid_t;
+typedef __uint32_t __id_t;
+typedef __uint32_t __in_addr_t;
+typedef __uint16_t __in_port_t;
+typedef __uint32_t __ino_t;
+typedef long __key_t;
+typedef __uint32_t __mode_t;
+typedef __uint32_t __nlink_t;
+typedef __int32_t __pid_t;
+typedef __uint64_t __rlim_t;
+typedef __uint8_t __sa_family_t;
+typedef __int32_t __segsz_t;
+typedef __uint32_t __socklen_t;
+typedef __int32_t __swblk_t;
+typedef __uint32_t __uid_t;
+typedef __uint32_t __useconds_t;
+typedef __int32_t __suseconds_t;
+typedef __uint64_t __fsblkcnt_t;
+typedef __uint64_t __fsfilcnt_t;
+
+
+
+
+
+typedef union {
+ char __mbstate8[128];
+ __int64_t __mbstateL;
+} __mbstate_t;
+# 35 "/usr/include/stdatomic.h" 2 3 4
+# 99 "/usr/include/stdatomic.h" 3 4
+enum memory_order {
+ memory_order_relaxed = 0,
+ memory_order_consume = 1,
+ memory_order_acquire = 2,
+ memory_order_release = 3,
+ memory_order_acq_rel = 4,
+ memory_order_seq_cst = 5
+};
+# 146 "/usr/include/stdatomic.h" 3 4
+typedef _Atomic(_Bool) atomic_bool;
+typedef _Atomic(char) atomic_char;
+typedef _Atomic(signed char) atomic_schar;
+typedef _Atomic(unsigned char) atomic_uchar;
+typedef _Atomic(short) atomic_short;
+typedef _Atomic(unsigned short) atomic_ushort;
+typedef _Atomic(int) atomic_int;
+typedef _Atomic(unsigned int) atomic_uint;
+typedef _Atomic(long) atomic_long;
+typedef _Atomic(unsigned long) atomic_ulong;
+typedef _Atomic(long long) atomic_llong;
+typedef _Atomic(unsigned long long) atomic_ullong;
+
+
+
+
+typedef _Atomic(__wchar_t) atomic_wchar_t;
+typedef _Atomic(__int_least8_t) atomic_int_least8_t;
+typedef _Atomic(__uint_least8_t) atomic_uint_least8_t;
+typedef _Atomic(__int_least16_t) atomic_int_least16_t;
+typedef _Atomic(__uint_least16_t) atomic_uint_least16_t;
+typedef _Atomic(__int_least32_t) atomic_int_least32_t;
+typedef _Atomic(__uint_least32_t) atomic_uint_least32_t;
+typedef _Atomic(__int_least64_t) atomic_int_least64_t;
+typedef _Atomic(__uint_least64_t) atomic_uint_least64_t;
+typedef _Atomic(__int_fast8_t) atomic_int_fast8_t;
+typedef _Atomic(__uint_fast8_t) atomic_uint_fast8_t;
+typedef _Atomic(__int_fast16_t) atomic_int_fast16_t;
+typedef _Atomic(__uint_fast16_t) atomic_uint_fast16_t;
+typedef _Atomic(__int_fast32_t) atomic_int_fast32_t;
+typedef _Atomic(__uint_fast32_t) atomic_uint_fast32_t;
+typedef _Atomic(__int_fast64_t) atomic_int_fast64_t;
+typedef _Atomic(__uint_fast64_t) atomic_uint_fast64_t;
+typedef _Atomic(__intptr_t) atomic_intptr_t;
+typedef _Atomic(__uintptr_t) atomic_uintptr_t;
+typedef _Atomic(__size_t) atomic_size_t;
+typedef _Atomic(__ptrdiff_t) atomic_ptrdiff_t;
+typedef _Atomic(__intmax_t) atomic_intmax_t;
+typedef _Atomic(__uintmax_t) atomic_uintmax_t;
+# 327 "/usr/include/stdatomic.h" 3 4
+typedef atomic_bool atomic_flag;
+# 20 "include/ll.h" 2
+# 1 "/usr/bin/../lib/clang/3.2/include/stddef.h" 1 3 4
+# 32 "/usr/bin/../lib/clang/3.2/include/stddef.h" 3 4
+typedef long __ptrdiff_t;
+typedef __ptrdiff_t ptrdiff_t;
+
+
+
+
+typedef unsigned long __size_t;
+typedef __size_t size_t;
+
+
+
+
+typedef int wchar_t;
+# 21 "include/ll.h" 2
+# 1 "/usr/bin/../lib/clang/3.2/include/stdint.h" 1 3 4
+# 33 "/usr/bin/../lib/clang/3.2/include/stdint.h" 3 4
+# 1 "/usr/include/stdint.h" 1 3 4
+# 32 "/usr/include/stdint.h" 3 4
+typedef __int8_t int8_t;
+
+
+
+
+typedef __uint8_t uint8_t;
+
+
+
+
+typedef __int16_t int16_t;
+
+
+
+
+typedef __uint16_t uint16_t;
+
+
+
+
+typedef __int32_t int32_t;
+
+
+
+
+typedef __uint32_t uint32_t;
+
+
+
+
+typedef __int64_t int64_t;
+
+
+
+
+typedef __uint64_t uint64_t;
+
+
+
+typedef __int_least8_t int_least8_t;
+typedef __uint_least8_t uint_least8_t;
+typedef __int_least16_t int_least16_t;
+typedef __uint_least16_t uint_least16_t;
+typedef __int_least32_t int_least32_t;
+typedef __uint_least32_t uint_least32_t;
+typedef __int_least64_t int_least64_t;
+typedef __uint_least64_t uint_least64_t;
+
+
+typedef __int_fast8_t int_fast8_t;
+typedef __uint_fast8_t uint_fast8_t;
+typedef __int_fast16_t int_fast16_t;
+typedef __uint_fast16_t uint_fast16_t;
+typedef __int_fast32_t int_fast32_t;
+typedef __uint_fast32_t uint_fast32_t;
+typedef __int_fast64_t int_fast64_t;
+typedef __uint_fast64_t uint_fast64_t;
+
+
+typedef __intptr_t intptr_t;
+typedef __uintptr_t uintptr_t;
+
+
+typedef __intmax_t intmax_t;
+typedef __uintmax_t uintmax_t;
+# 34 "/usr/bin/../lib/clang/3.2/include/stdint.h" 2 3 4
+# 22 "include/ll.h" 2
+
+
+
+
+
+typedef atomic_uintptr_t elem_ptr_t;
+struct ll_elem {
+ elem_ptr_t succ, pred;
+ atomic_size_t refcnt;
+};
+
+struct ll_head {
+ struct ll_elem q;
+ atomic_size_t size;
+};
+
+
+struct ll_elem *ll_unlink(struct ll_head*, struct ll_elem*, int);
+void ll_unlink_release(struct ll_head*, struct ll_elem*);
+struct ll_elem *ll_succ(struct ll_head*, struct ll_elem*);
+struct ll_elem *ll_pred(struct ll_head*, struct ll_elem*);
+void ll_ref(struct ll_head*, struct ll_elem*);
+void ll_release(struct ll_head*, struct ll_elem*);
+int ll_empty(struct ll_head*);
+void ll_insert_before(struct ll_head*, struct ll_elem*,
+      struct ll_elem*);
+void ll_insert_after(struct ll_head*, struct ll_elem*,
+      struct ll_elem*);
+void ll_insert_head(struct ll_head*, struct ll_elem*);
+void ll_insert_tail(struct ll_head*, struct ll_elem*);
+struct ll_elem *ll_pop_front(struct ll_head*);
+struct ll_elem *ll_pop_back(struct ll_head*);
+size_t ll_size(struct ll_head*);
+# 9 "test/llobj.h" 2
+# 1 "/usr/include/assert.h" 1 3 4
+# 65 "/usr/include/assert.h" 3 4
+       void __assert(const char *, int, const char *);
+       void __assert2(const char *, int, const char *, const char *);
+# 10 "test/llobj.h" 2
+
+struct obj {
+ int satelite;
+ struct ll_elem entry;
+};
+struct objlist { struct ll_head ll_head; };
+static __inline struct obj* ll_elem_objlist(struct ll_elem *e) { return (e == ((void*)0) ? ((void*)0) : (struct obj*)((uintptr_t)e - __builtin_offsetof(struct obj, entry))); } static __inline struct obj* ll_succ_objlist(struct objlist *q, struct obj *n) { return ll_elem_objlist(ll_succ(&q->ll_head, &n->entry)); } static __inline struct obj* ll_pred_objlist(struct objlist *q, struct obj *n) { return ll_elem_objlist(ll_pred(&q->ll_head, &n->entry)); } static __inline struct obj* ll_first_objlist(struct objlist *q) { return ll_elem_objlist(ll_succ(&q->ll_head, &q->ll_head.q)); } static __inline struct obj* ll_last_objlist(struct objlist *q) { return ll_elem_objlist(ll_pred(&q->ll_head, &q->ll_head.q)); } static __inline void ll_ref_objlist(struct objlist *q, struct obj *n) { ll_ref(&q->ll_head, &n->entry); } static __inline void ll_release_objlist(struct objlist *q, struct obj *n) { ll_release(&q->ll_head, &n->entry); } static __inline int ll_empty_objlist(struct objlist *q) { return ll_empty(&q->ll_head); } static __inline struct obj* ll_foreach_succ_objlist(struct objlist *q, struct obj *n) { struct obj *s; s = ll_succ_objlist(q, n); ll_release_objlist(q, n); return s; } static __inline struct obj* ll_foreach_pred_objlist(struct objlist *q, struct obj *n) { struct obj *p; p = ll_pred_objlist(q, n); ll_release_objlist(q, n); return p; } static __inline void ll_insert_after_objlist(struct objlist *q, struct obj *n, struct obj *rel) { ll_insert_after(&q->ll_head, &n->entry, &rel->entry); } static __inline void ll_insert_before_objlist(struct objlist *q, struct obj *n, struct obj *rel) { ll_insert_before(&q->ll_head, &n->entry, &rel->entry); } static __inline void ll_insert_head_objlist(struct objlist *q, struct obj *n) { ll_insert_head(&q->ll_head, &n->entry); } static __inline void ll_insert_tail_objlist(struct objlist *q, struct obj *n) { ll_insert_tail(&q->ll_head, &n->entry); } static __inline struct obj* ll_unlink_objlist(struct objlist *q, struct obj *n) { return ll_elem_objlist(ll_unlink(&q->ll_head, &n->entry, 1)); } static __inline struct obj* ll_unlink_nowait_objlist(struct objlist *q, struct obj *n) { return ll_elem_objlist(ll_unlink(&q->ll_head, &n->entry, 0)); } static __inline void ll_unlink_wait_objlist(struct objlist *q, struct obj *n) { ll_unlink_release(&q->ll_head, &n->entry); } static __inline struct obj* ll_pop_front_objlist(struct objlist *q) { return ll_elem_objlist(ll_pop_front(&q->ll_head)); } static __inline struct obj* ll_pop_back_objlist(struct objlist *q) { return ll_elem_objlist(ll_pop_back(&q->ll_head)); } static inline size_t ll_size_objlist(struct objlist *q) { return ll_size(&q->ll_head); };
+# 2 "test/push_back.c" 2
+# 1 "/usr/include/stdio.h" 1 3 4
+# 42 "/usr/include/stdio.h" 3 4
+# 1 "/usr/include/sys/_null.h" 1 3 4
+# 43 "/usr/include/stdio.h" 2 3 4
+
+
+
+# 1 "/usr/include/sys/types.h" 1 3 4
+# 45 "/usr/include/sys/types.h" 3 4
+# 1 "/usr/include/machine/endian.h" 1 3 4
+# 59 "/usr/include/machine/endian.h" 3 4
+# 1 "/usr/include/sys/endian.h" 1 3 4
+# 162 "/usr/include/sys/endian.h" 3 4
+__uint64_t htobe64(__uint64_t);
+__uint32_t htobe32(__uint32_t);
+__uint16_t htobe16(__uint16_t);
+__uint64_t betoh64(__uint64_t);
+__uint32_t betoh32(__uint32_t);
+__uint16_t betoh16(__uint16_t);
+
+__uint64_t htole64(__uint64_t);
+__uint32_t htole32(__uint32_t);
+__uint16_t htole16(__uint16_t);
+__uint64_t letoh64(__uint64_t);
+__uint32_t letoh32(__uint32_t);
+__uint16_t letoh16(__uint16_t);
+# 60 "/usr/include/machine/endian.h" 2 3 4
+# 46 "/usr/include/sys/types.h" 2 3 4
+
+
+typedef unsigned char u_char;
+typedef unsigned short u_short;
+typedef unsigned int u_int;
+typedef unsigned long u_long;
+
+typedef unsigned char unchar;
+typedef unsigned short ushort;
+typedef unsigned int uint;
+typedef unsigned long ulong;
+
+typedef __cpuid_t cpuid_t;
+typedef __register_t register_t;
+# 111 "/usr/include/sys/types.h" 3 4
+typedef __uint8_t u_int8_t;
+typedef __uint16_t u_int16_t;
+typedef __uint32_t u_int32_t;
+typedef __uint64_t u_int64_t;
+
+
+typedef __int64_t quad_t;
+typedef __uint64_t u_quad_t;
+typedef quad_t * qaddr_t;
+
+
+
+typedef __vaddr_t vaddr_t;
+typedef __paddr_t paddr_t;
+typedef __vsize_t vsize_t;
+typedef __psize_t psize_t;
+
+
+
+typedef char * caddr_t;
+typedef __int32_t daddr32_t;
+typedef __int64_t daddr_t;
+typedef __int64_t daddr64_t;
+typedef __dev_t dev_t;
+typedef __fixpt_t fixpt_t;
+typedef __gid_t gid_t;
+typedef __id_t id_t;
+typedef __ino_t ino_t;
+typedef __key_t key_t;
+typedef __mode_t mode_t;
+typedef __nlink_t nlink_t;
+typedef __pid_t pid_t;
+typedef __rlim_t rlim_t;
+typedef __segsz_t segsz_t;
+typedef __swblk_t swblk_t;
+typedef __uid_t uid_t;
+typedef __useconds_t useconds_t;
+typedef __suseconds_t suseconds_t;
+typedef __fsblkcnt_t fsblkcnt_t;
+typedef __fsfilcnt_t fsfilcnt_t;
+# 160 "/usr/include/sys/types.h" 3 4
+typedef __in_addr_t in_addr_t;
+typedef __in_port_t in_port_t;
+typedef __sa_family_t sa_family_t;
+typedef __socklen_t socklen_t;
+
+
+
+
+
+
+typedef __clock_t clock_t;
+
+
+
+
+typedef __clockid_t clockid_t;
+
+
+
+
+typedef __size_t size_t;
+
+
+
+
+typedef __ssize_t ssize_t;
+
+
+
+
+typedef __time_t time_t;
+
+
+
+
+typedef __timer_t timer_t;
+
+
+
+
+typedef __off_t off_t;
+# 210 "/usr/include/sys/types.h" 3 4
+off_t lseek(int, off_t, int);
+int ftruncate(int, off_t);
+int truncate(const char *, off_t);
+# 224 "/usr/include/sys/types.h" 3 4
+# 1 "/usr/include/sys/select.h" 1 3 4
+# 38 "/usr/include/sys/select.h" 3 4
+# 1 "/usr/include/sys/time.h" 1 3 4
+# 39 "/usr/include/sys/time.h" 3 4
+# 1 "/usr/include/sys/types.h" 1 3 4
+# 40 "/usr/include/sys/time.h" 2 3 4
+# 49 "/usr/include/sys/time.h" 3 4
+struct timeval {
+ long tv_sec;
+ long tv_usec;
+};
+
+
+
+
+
+
+struct timespec {
+ time_t tv_sec;
+ long tv_nsec;
+};
+# 74 "/usr/include/sys/time.h" 3 4
+struct timezone {
+ int tz_minuteswest;
+ int tz_dsttime;
+};
+# 139 "/usr/include/sys/time.h" 3 4
+struct bintime {
+ time_t sec;
+ uint64_t frac;
+};
+
+static __inline void
+bintime_addx(struct bintime *bt, uint64_t x)
+{
+ uint64_t u;
+
+ u = bt->frac;
+ bt->frac += x;
+ if (u > bt->frac)
+  bt->sec++;
+}
+
+static __inline void
+bintime_add(struct bintime *bt, struct bintime *bt2)
+{
+ uint64_t u;
+
+ u = bt->frac;
+ bt->frac += bt2->frac;
+ if (u > bt->frac)
+  bt->sec++;
+ bt->sec += bt2->sec;
+}
+
+static __inline void
+bintime_sub(struct bintime *bt, struct bintime *bt2)
+{
+ uint64_t u;
+
+ u = bt->frac;
+ bt->frac -= bt2->frac;
+ if (u < bt->frac)
+  bt->sec--;
+ bt->sec -= bt2->sec;
+}
+# 193 "/usr/include/sys/time.h" 3 4
+static __inline void
+bintime2timespec(struct bintime *bt, struct timespec *ts)
+{
+
+ ts->tv_sec = bt->sec;
+ ts->tv_nsec = (long)(((uint64_t)1000000000 * (uint32_t)(bt->frac >> 32)) >> 32);
+}
+
+static __inline void
+timespec2bintime(struct timespec *ts, struct bintime *bt)
+{
+
+ bt->sec = ts->tv_sec;
+
+ bt->frac = (uint64_t)ts->tv_nsec * (uint64_t)18446744073ULL;
+}
+
+static __inline void
+bintime2timeval(struct bintime *bt, struct timeval *tv)
+{
+
+ tv->tv_sec = bt->sec;
+ tv->tv_usec = (long)(((uint64_t)1000000 * (uint32_t)(bt->frac >> 32)) >> 32);
+}
+
+static __inline void
+timeval2bintime(struct timeval *tv, struct bintime *bt)
+{
+
+ bt->sec = (time_t)tv->tv_sec;
+
+ bt->frac = (uint64_t)tv->tv_usec * (uint64_t)18446744073709ULL;
+}
+# 235 "/usr/include/sys/time.h" 3 4
+struct itimerval {
+ struct timeval it_interval;
+ struct timeval it_value;
+};
+
+
+
+
+struct clockinfo {
+ int hz;
+ int tick;
+ int tickadj;
+ int stathz;
+ int profhz;
+};
+# 331 "/usr/include/sys/time.h" 3 4
+# 1 "/usr/include/time.h" 1 3 4
+# 45 "/usr/include/time.h" 3 4
+# 1 "/usr/include/sys/_null.h" 1 3 4
+# 46 "/usr/include/time.h" 2 3 4
+# 82 "/usr/include/time.h" 3 4
+# 1 "/usr/include/sys/_time.h" 1 3 4
+# 44 "/usr/include/sys/_time.h" 3 4
+struct itimerspec {
+ struct timespec it_interval;
+ struct timespec it_value;
+};
+# 83 "/usr/include/time.h" 2 3 4
+# 95 "/usr/include/time.h" 3 4
+struct tm {
+ int tm_sec;
+ int tm_min;
+ int tm_hour;
+ int tm_mday;
+ int tm_mon;
+ int tm_year;
+ int tm_wday;
+ int tm_yday;
+ int tm_isdst;
+ long tm_gmtoff;
+ char *tm_zone;
+};
+
+
+char *asctime(const struct tm *);
+clock_t clock(void);
+char *ctime(const time_t *);
+double difftime(time_t, time_t);
+struct tm *gmtime(const time_t *);
+struct tm *localtime(const time_t *);
+time_t mktime(struct tm *);
+size_t strftime(char *, size_t, const char *, const struct tm *)
+  __attribute__ ((__bounded__(__string__,1,2)));
+time_t time(time_t *);
+
+
+char *strptime(const char *, const char *, struct tm *);
+
+
+
+char *asctime_r(const struct tm *, char *)
+  __attribute__ ((__bounded__(__minbytes__,2,26)));
+char *ctime_r(const time_t *, char *)
+  __attribute__ ((__bounded__(__minbytes__,2,26)));
+struct tm *gmtime_r(const time_t *, struct tm *);
+struct tm *localtime_r(const time_t *, struct tm *);
+
+
+
+extern char *tzname[2];
+void tzset(void);
+
+
+
+int clock_getres(clockid_t, struct timespec *);
+int clock_gettime(clockid_t, struct timespec *);
+int clock_settime(clockid_t, const struct timespec *);
+int nanosleep(const struct timespec *, struct timespec *);
+
+
+
+char *timezone(int, int);
+void tzsetwall(void);
+time_t timelocal(struct tm *);
+time_t timegm(struct tm *);
+time_t timeoff(struct tm *, const long);
+# 332 "/usr/include/sys/time.h" 2 3 4
+
+
+
+
+int adjtime(const struct timeval *, struct timeval *);
+int adjfreq(const int64_t *, int64_t *);
+
+
+int futimes(int, const struct timeval *);
+int getitimer(int, struct itimerval *);
+int gettimeofday(struct timeval *, struct timezone *);
+int setitimer(int, const struct itimerval *, struct itimerval *);
+int settimeofday(const struct timeval *, const struct timezone *);
+int utimes(const char *, const struct timeval *);
+# 39 "/usr/include/sys/select.h" 2 3 4
+# 55 "/usr/include/sys/select.h" 3 4
+typedef int32_t __fd_mask;
+
+
+
+typedef struct fd_set {
+ __fd_mask fds_bits[(((1024) + ((((unsigned)(sizeof(__fd_mask) * 8))) - 1)) / (((unsigned)(sizeof(__fd_mask) * 8))))];
+} fd_set;
+# 90 "/usr/include/sys/select.h" 3 4
+struct timeval;
+int select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+# 225 "/usr/include/sys/types.h" 2 3 4
+# 47 "/usr/include/stdio.h" 2 3 4
+# 61 "/usr/include/stdio.h" 3 4
+typedef off_t fpos_t;
+# 70 "/usr/include/stdio.h" 3 4
+struct __sbuf {
+ unsigned char *_base;
+ int _size;
+};
+# 99 "/usr/include/stdio.h" 3 4
+typedef struct __sFILE {
+ unsigned char *_p;
+ int _r;
+ int _w;
+ short _flags;
+ short _file;
+ struct __sbuf _bf;
+ int _lbfsize;
+
+
+ void *_cookie;
+ int (*_close)(void *);
+ int (*_read)(void *, char *, int);
+ fpos_t (*_seek)(void *, fpos_t, int);
+ int (*_write)(void *, const char *, int);
+
+
+ struct __sbuf _ext;
+
+ unsigned char *_up;
+ int _ur;
+
+
+ unsigned char _ubuf[3];
+ unsigned char _nbuf[1];
+
+
+ struct __sbuf _lb;
+
+
+ int _blksize;
+ fpos_t _offset;
+} FILE;
+
+
+extern FILE __sF[];
+# 205 "/usr/include/stdio.h" 3 4
+void clearerr(FILE *);
+int fclose(FILE *);
+int feof(FILE *);
+int ferror(FILE *);
+int fflush(FILE *);
+int fgetc(FILE *);
+int fgetpos(FILE *, fpos_t *);
+char *fgets(char *, int, FILE *)
+  __attribute__((__bounded__ (__string__,1,2)));
+FILE *fopen(const char *, const char *);
+int fprintf(FILE *, const char *, ...);
+int fputc(int, FILE *);
+int fputs(const char *, FILE *);
+size_t fread(void *, size_t, size_t, FILE *)
+  __attribute__((__bounded__ (__size__,1,3,2)));
+FILE *freopen(const char *, const char *, FILE *);
+int fscanf(FILE *, const char *, ...);
+int fseek(FILE *, long, int);
+int fseeko(FILE *, off_t, int);
+int fsetpos(FILE *, const fpos_t *);
+long ftell(FILE *);
+off_t ftello(FILE *);
+size_t fwrite(const void *, size_t, size_t, FILE *)
+  __attribute__((__bounded__ (__size__,1,3,2)));
+int getc(FILE *);
+int getchar(void);
+
+ssize_t getdelim(char ** __restrict, size_t * __restrict, int,
+     FILE * __restrict);
+ssize_t getline(char ** __restrict, size_t * __restrict,
+     FILE * __restrict);
+
+char *gets(char *);
+
+
+
+extern int sys_nerr;
+extern char *sys_errlist[];
+
+void perror(const char *);
+int printf(const char *, ...);
+int putc(int, FILE *);
+int putchar(int);
+int puts(const char *);
+int remove(const char *);
+int rename(const char *, const char *);
+
+int renameat(int, const char *, int, const char *);
+
+void rewind(FILE *);
+int scanf(const char *, ...);
+void setbuf(FILE *, char *);
+int setvbuf(FILE *, char *, int, size_t);
+int sprintf(char *, const char *, ...);
+int sscanf(const char *, const char *, ...);
+FILE *tmpfile(void);
+char *tmpnam(char *);
+int ungetc(int, FILE *);
+int vfprintf(FILE *, const char *, __va_list);
+int vprintf(const char *, __va_list);
+int vsprintf(char *, const char *, __va_list);
+
+
+int snprintf(char *, size_t, const char *, ...)
+  __attribute__((__format__ (printf, 3, 4)))
+  __attribute__((__nonnull__ (3)))
+  __attribute__((__bounded__ (__string__,1,2)));
+int vfscanf(FILE *, const char *, __va_list)
+  __attribute__((__format__ (scanf, 2, 0)))
+  __attribute__((__nonnull__ (2)));
+int vscanf(const char *, __va_list)
+  __attribute__((__format__ (scanf, 1, 0)))
+  __attribute__((__nonnull__ (1)));
+int vsnprintf(char *, size_t, const char *, __va_list)
+  __attribute__((__format__ (printf, 3, 0)))
+  __attribute__((__nonnull__ (3)))
+  __attribute__((__bounded__(__string__,1,2)));
+int vsscanf(const char *, const char *, __va_list)
+  __attribute__((__format__ (scanf, 2, 0)))
+  __attribute__((__nonnull__ (2)));
+# 298 "/usr/include/stdio.h" 3 4
+char *ctermid(char *);
+char *cuserid(char *);
+FILE *fdopen(int, const char *);
+int fileno(FILE *);
+
+
+int pclose(FILE *);
+FILE *popen(const char *, const char *);
+
+
+
+void flockfile(FILE *);
+int ftrylockfile(FILE *);
+void funlockfile(FILE *);
+
+
+
+
+
+int getc_unlocked(FILE *);
+int getchar_unlocked(void);
+int putc_unlocked(int, FILE *);
+int putchar_unlocked(int);
+
+
+
+char *tempnam(const char *, const char *);
+# 335 "/usr/include/stdio.h" 3 4
+int asprintf(char **, const char *, ...)
+  __attribute__((__format__ (printf, 2, 3)))
+  __attribute__((__nonnull__ (2)));
+char *fgetln(FILE *, size_t *);
+int fpurge(FILE *);
+int getw(FILE *);
+int putw(int, FILE *);
+void setbuffer(FILE *, char *, int);
+int setlinebuf(FILE *);
+int vasprintf(char **, const char *, __va_list)
+  __attribute__((__format__ (printf, 2, 0)))
+  __attribute__((__nonnull__ (2)));
+
+
+
+
+
+
+FILE *funopen(const void *,
+  int (*)(void *, char *, int),
+  int (*)(void *, const char *, int),
+  fpos_t (*)(void *, fpos_t, int),
+  int (*)(void *));
+# 367 "/usr/include/stdio.h" 3 4
+int __srget(FILE *);
+int __swbuf(int, FILE *);
+# 377 "/usr/include/stdio.h" 3 4
+static __inline int __sputc(int _c, FILE *_p) {
+ if (--_p->_w >= 0 || (_p->_w >= _p->_lbfsize && (char)_c != '\n'))
+  return (*_p->_p++ = _c);
+ else
+  return (__swbuf(_c, _p));
+}
+# 402 "/usr/include/stdio.h" 3 4
+extern int __isthreaded;
+# 3 "test/push_back.c" 2
+
+struct objlist list = {{ { ((uintptr_t)&list.ll_head), ((uintptr_t)&list.ll_head), ((size_t)2) }, ((size_t)0) }};
+struct obj data[1000];
+
+
+
+
+
+
+int
+main()
+{
+ int i;
+ struct obj *o, *next_o = ((void*)0);
+
+ for (i = 0; i < 1000; i++)
+  data[i].satelite = i;
+
+ for (i = 0; i < 1000; i++) {
+  ll_insert_tail_objlist(&list, &data[i]);
+  ll_release_objlist(&list, &data[i]);
+ }
+
+
+
+
+ (((*(void**)&(&list.ll_head.q)->succ) == &data[0].entry) ? (void)0 : __assert2("test/push_back.c", 29, __func__, "SUCC(&list.ll_head.q) == &data[0].entry"));
+ for (i = 0; i < 1000 - 1; i++)
+  (((*(void**)&(&data[i].entry)->succ) == &data[i + 1].entry) ? (void)0 : __assert2("test/push_back.c", 31, __func__, "SUCC(&data[i].entry) == &data[i + 1].entry"));
+ (((*(void**)&(&data[1000 - 1].entry)->succ) == &list.ll_head.q) ? (void)0 : __assert2("test/push_back.c", 32, __func__, "SUCC(&data[N - 1].entry) == &list.ll_head.q"));
+
+
+
+
+ (((*(void**)&(&list.ll_head.q)->pred) == &data[1000 - 1].entry) ? (void)0 : __assert2("test/push_back.c", 37, __func__, "PRED(&list.ll_head.q) == &data[N - 1].entry"));
+ for (i = 0; i < 1000 - 1; i++)
+  (((*(void**)&(&data[i + 1].entry)->pred) == &data[i].entry) ? (void)0 : __assert2("test/push_back.c", 39, __func__, "PRED(&data[i + 1].entry) == &data[i].entry"));
+ (((*(void**)&(&data[0].entry)->pred) == &list.ll_head.q) ? (void)0 : __assert2("test/push_back.c", 40, __func__, "PRED(&data[0].entry) == &list.ll_head.q"));
+
+
+
+
+ (((*(size_t*)&(&list.ll_head.q)->refcnt) == 2) ? (void)0 : __assert2("test/push_back.c", 45, __func__, "REFCNT(&list.ll_head.q) == 2"));
+ for (i = 0; i < 1000 - 1; i++)
+  (((*(size_t*)&(&data[i + 1].entry)->refcnt) == 2) ? (void)0 : __assert2("test/push_back.c", 47, __func__, "REFCNT(&data[i + 1].entry) == 2"));
+
+
+ for (i = 0, o = ll_first_objlist(&list);
+     i < 1000;
+     i++, o = next_o) {
+  ((o != ((void*)0)) ? (void)0 : __assert2("test/push_back.c", 53, __func__, "o != NULL"));
+  ((o->satelite == i) ? (void)0 : __assert2("test/push_back.c", 54, __func__, "o->satelite == i"));
+
+  next_o = ll_succ_objlist(&list, o);
+
+  ll_release_objlist(&list, o);
+ }
+
+ return 0;
+}
