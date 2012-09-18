@@ -31,7 +31,10 @@ check_cxx_compiler_flag("-std=c++11" STD_CXX11)
 check_cxx_compiler_flag("-std=c++0x" STD_CXX0X)
 mark_as_advanced (STD_C11 STD_CXX11)
 if (STD_C11)
-	set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+	# Disable -std=c11 option.
+	# Doesn't work right on clang at the moment, but neither clang nor gcc
+	# require it, as long as stdatomic.h doesn't.
+	#set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 endif (STD_C11)
 if (STD_CXX11)
 	set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
