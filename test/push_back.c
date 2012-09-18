@@ -1,5 +1,6 @@
 #include "llobj.h"
 #include <assert.h>
+#include <stdio.h>
 
 struct objlist list = LL_HEAD_INITIALIZER(list);
 struct obj data[N];
@@ -18,11 +19,10 @@ main()
 	for (i = 0; i < N; i++)
 		data[i].satelite = i;
 
-	for (i = N - 1; i >= 0; i--) {
-		LL_PUSH_FRONT(objlist, &list, &data[i]);
+	for (i = 0; i < N; i++) {
+		LL_PUSH_BACK(objlist, &list, &data[i]);
 		LL_RELEASE(objlist, &list, &data[i]);
 	}
-
 
 	/*
 	 * Verify queue is correct with respect to all next pointers.
