@@ -72,13 +72,14 @@ size_t		 ll_size(struct ll_head*);
 }}
 
 #define LL_INIT(head)							\
+	LL_INIT__LL_HEAD(&(head)->ll_head)
+
+#define LL_INIT__LL_HEAD(ll_head)					\
 do {									\
-	atomic_init(&(head)->ll_head.q.succ,				\
-	    (uintptr_t)&(head)->ll_head);				\
-	atomic_init(&(head)->ll_head.q.pred,				\
-	    (uintptr_t)&(head)->ll_head);				\
-	atomic_init(&(head)->ll_head.q.refcnt, 2);			\
-	atomic_init(&(head)->ll_head.size, 0);				\
+	atomic_init(&(ll_head)->q.succ, (uintptr_t)(ll_head));		\
+	atomic_init(&(ll_head)->q.pred, (uintptr_t)(ll_head));		\
+	atomic_init(&(ll_head)->q.refcnt, 2);				\
+	atomic_init(&(ll_head)->size, 0);				\
 } while (0)
 
 #define LL_NEXT(name, head, node)	ll_succ_##name(head, node)
