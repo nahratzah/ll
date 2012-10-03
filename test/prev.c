@@ -14,10 +14,8 @@ main()
 		data[i].satelite = i;
 	}
 
-	for (i = 0; i < N; i++) {
+	for (i = 0; i < N; i++)
 		LL_PUSH_BACK(objlist, &list, &data[i]);
-		LL_RELEASE(objlist, &list, &data[i]);
-	}
 
 	for (i = N - 1, o = LL_LAST(objlist, &list);
 	    i > 0 - 1;

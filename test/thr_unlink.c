@@ -41,7 +41,6 @@ main()
 			data[j][i].satelite = N * j + i;
 			LL_INIT_ENTRY(&data[j][i].entry);
 			LL_PUSH_BACK(objlist, &list, &data[j][i]);
-			LL_RELEASE(objlist, &list, &data[j][i]);
 		}
 	}
 

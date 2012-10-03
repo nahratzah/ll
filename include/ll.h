@@ -43,12 +43,12 @@ struct ll_elem	*ll_pred(struct ll_head*, struct ll_elem*);
 void		 ll_ref(struct ll_head*, struct ll_elem*);
 void		 ll_release(struct ll_head*, struct ll_elem*);
 int		 ll_empty(struct ll_head*);
-void		 ll_insert_before(struct ll_head*, struct ll_elem*,
+int		 ll_insert_before(struct ll_head*, struct ll_elem*,
 		    struct ll_elem*);
-void		 ll_insert_after(struct ll_head*, struct ll_elem*,
+int		 ll_insert_after(struct ll_head*, struct ll_elem*,
 		    struct ll_elem*);
-void		 ll_insert_head(struct ll_head*, struct ll_elem*);
-void		 ll_insert_tail(struct ll_head*, struct ll_elem*);
+int		 ll_insert_head(struct ll_head*, struct ll_elem*);
+int		 ll_insert_tail(struct ll_head*, struct ll_elem*);
 struct ll_elem	*ll_pop_front(struct ll_head*);
 struct ll_elem	*ll_pop_back(struct ll_head*);
 size_t		 ll_size(struct ll_head*);
@@ -206,27 +206,27 @@ ll_foreach_pred_##name(struct name *q, struct type *n)			\
 	/* Return successor. */						\
 	return p;							\
 }									\
-static __inline void							\
+static __inline int							\
 ll_insert_after_##name(struct name *q, struct type *n,			\
     struct type *rel)							\
 {									\
-	ll_insert_after(&q->ll_head, &n->member, &rel->member);		\
+	return ll_insert_after(&q->ll_head, &n->member, &rel->member);	\
 }									\
-static __inline void							\
+static __inline int							\
 ll_insert_before_##name(struct name *q, struct type *n,			\
     struct type *rel)							\
 {									\
-	ll_insert_before(&q->ll_head, &n->member, &rel->member);	\
+	return ll_insert_before(&q->ll_head, &n->member, &rel->member);	\
 }									\
-static __inline void							\
+static __inline int							\
 ll_insert_head_##name(struct name *q, struct type *n)			\
 {									\
-	ll_insert_head(&q->ll_head, &n->member);			\
+	return ll_insert_head(&q->ll_head, &n->member);			\
 }									\
-static __inline void							\
+static __inline int							\
 ll_insert_tail_##name(struct name *q, struct type *n)			\
 {									\
-	ll_insert_tail(&q->ll_head, &n->member);			\
+	return ll_insert_tail(&q->ll_head, &n->member);			\
 }									\
 static __inline struct type*						\
 ll_unlink_##name(struct name *q, struct type *n)			\

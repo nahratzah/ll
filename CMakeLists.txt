@@ -78,8 +78,8 @@ add_library (ll
 	${srcs}
 	${headers}
 	)
-set_property (TARGET ll PROPERTY VERSION "0.0")
-set_property (TARGET ll PROPERTY SOVERSION "0.0")
+set_property (TARGET ll PROPERTY VERSION "1.0")
+set_property (TARGET ll PROPERTY SOVERSION "1.0")
 
 install (TARGETS ll
 	LIBRARY DESTINATION lib

@@ -77,10 +77,8 @@ push_front_thread(void *listptr)
 	struct objlist *list = listptr;
 
 	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
-	for (i = N / 2 - 1; i >= 0; i--) {
+	for (i = N / 2 - 1; i >= 0; i--)
 		LL_PUSH_FRONT(objlist, list, &data[i]);
-		LL_RELEASE(objlist, list, &data[i]);
-	}
 	return NULL;
 }
 void*
@@ -90,9 +88,7 @@ push_back_thread(void *listptr)
 	struct objlist *list = listptr;
 
 	must_succeed(barrier_wait(&barrier), "pthread_barrier_wait");
-	for (i = N / 2; i < N; i++) {
+	for (i = N / 2; i < N; i++)
 		LL_PUSH_BACK(objlist, list, &data[i]);
-		LL_RELEASE(objlist, list, &data[i]);
-	}
 	return NULL;
 }

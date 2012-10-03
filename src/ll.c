@@ -121,7 +121,8 @@ deref(elem_ptr_t *ptr)
 	while ((e = atomic_fetch_or_explicit(ptr, DEREF,
 	    memory_order_relaxed)) & DEREF)
 		SPINWAIT();
-	deref_acquire((struct ll_elem*)e, 1);
+	if (ptr_clear((struct ll_elem*)e) != NULL)
+		deref_acquire((struct ll_elem*)e, 1);
 	atomic_fetch_and_explicit(ptr, ~DEREF, memory_order_relaxed);
 	return (struct ll_elem*)e;
 }
@@ -218,8 +219,13 @@ succ(struct ll_head *q_head, struct ll_elem *n)
 	q = &q_head->q;
 	assert(q == ptr_clear(q));
 	n = ptr_clear(n);
+	assert(n != NULL);
 
 	s = deref(&n->succ);
+	/* If s is null, n is not on the queue. */
+	if (ptr_clear(s) == NULL)
+		return s;
+
 	while (deleted(s)) {
 		ss = flag_combine(deref(&ptr_clear(s)->succ), s);
 		s_ = s;
@@ -270,9 +276,20 @@ pred(struct ll_head *q_head, struct ll_elem *n)
 	q = &q_head->q;
 	assert(q == ptr_clear(q));
 	n = ptr_clear(n);
+	assert(n != NULL);
 
 	p = deref(&n->pred);
+	if (ptr_clear(p) == NULL)
+		return p;
+
 	for (;;) {
+		/*
+		 * Predecessor cannot be null,
+		 * since it is on the queue and we have a reference to n,
+		 * preventing it from leaving the queue.
+		 */
+		assert(ptr_clear(p) != NULL);
+
 		/*
 		 * Search forward to reach the direct predecessor of
 		 * n between p and n.  Note that we cannot search for
@@ -281,6 +298,7 @@ pred(struct ll_head *q_head, struct ll_elem *n)
 		 */
 		if (!deleted_ptr(p)) {
 			ps = succ(q_head, p);
+			assert(ptr_clear(ps) != NULL);
 			while (ptr_clear(ps) != n && !deleted_ptr(p)) {
 				p_ = p;
 				if (ptr_cas(&n->pred, &p_, ps)) {
@@ -338,6 +356,23 @@ pred(struct ll_head *q_head, struct ll_elem *n)
 }
 
 /*
+ * Mark n as being inserted.
+ * Will prevent multiple inserts from running at the same time.
+ *
+ * Returns 1 on succes, 0 on failure.
+ * Only fails if n is already inserted or being inserted.
+ */
+static __inline int
+insert_lock(struct ll_elem *n)
+{
+	uintptr_t zero = 0;
+
+	return (atomic_compare_exchange_strong_explicit(&n->succ,
+	    &zero, FLAGGED,
+	    memory_order_relaxed, memory_order_relaxed));
+}
+
+/*
  * Insert n between p and s.
  *
  * If s is not a direct successor of p, the insert will fail.
@@ -363,7 +398,7 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 	assert(s == ptr_clear(s));
 	/* Check initial state of n. */
 	assert(atomic_load_explicit(&n->pred, memory_order_relaxed) == 0);
-	assert(atomic_load_explicit(&n->succ, memory_order_relaxed) == 0);
+	assert(atomic_load_explicit(&n->succ, memory_order_relaxed) == FLAGGED);
 	assert(atomic_load_explicit(&n->refcnt, memory_order_relaxed) > 0);
 
 	/*
@@ -429,7 +464,7 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 
 fail:
 	atomic_store_explicit(&n->pred, 0, memory_order_relaxed);
-	atomic_store_explicit(&n->succ, 0, memory_order_relaxed);
+	atomic_store_explicit(&n->succ, FLAGGED, memory_order_relaxed);
 	deref_release(q_head, p, 1);
 	deref_release(q_head, s, 1);
 	deref_release(q_head, ps, 1);
@@ -497,6 +532,17 @@ unlink(struct ll_head *q_head, struct ll_elem *n)
 	/* Argument validation. */
 	assert(q == ptr_clear(q));
 	n = ptr_clear(n);
+	assert(n != NULL);
+
+	/*
+	 * Since we hold the reference to n, is cannot be removed completely
+	 * before we return.
+	 * However it can be that this function was called while n is not on
+	 * the queue, hence test that now and fail if that is the case.
+	 */
+	if (ptr_clear((struct ll_elem*)atomic_load_explicit(&n->succ,
+	    memory_order_relaxed)) == NULL)
+		return 0;
 
 	/* Ensure n is not halfway an insert. */
 	while (atomic_load_explicit(&n->succ, memory_order_relaxed) & FLAGGED)
@@ -510,6 +556,7 @@ restart:
 	 */
 	for (;;) {
 		p = pred(q_head, n);
+		assert(ptr_clear(p) != NULL);
 		if (deleted_ptr(p)) {
 			/* Another thread marked n->pred with deletion. */
 			deref_release(q_head, p, 1);
@@ -748,7 +795,7 @@ ll_empty(struct ll_head *q_head)
  * This ensures relative ordering between calls to
  * insert_before(q,n,rel) and insert_after(q,n,pred(rel)).
  */
-void
+int
 ll_insert_before(struct ll_head *q_head, struct ll_elem *n,
     struct ll_elem *rel)
 {
@@ -760,14 +807,14 @@ ll_insert_before(struct ll_head *q_head, struct ll_elem *n,
 	assert(rel == ptr_clear(rel));
 
 	/*
-	 * Initial state:
-	 * - n is only referenced by us (borrowed reference from caller),
-	 * - n has no successor or predecessor (note that NULL is an
-	 *   illegal value in the queue).
+	 * Mark n for insert.  If this fails, n is either on a queue or
+	 * being inserted/deleted.
+	 *
+	 * Required that n is properly initialized.
 	 */
-	atomic_init(&n->refcnt, 1);
-	atomic_init(&n->pred, 0);
-	atomic_init(&n->succ, 0);
+	if (!insert_lock(n))
+		return 0;
+	deref_acquire(n, 1);
 
 	/* This is insert_before, so rel is the successor. */
 	s = rel;
@@ -791,13 +838,7 @@ ll_insert_before(struct ll_head *q_head, struct ll_elem *n,
 		 * Insert failed.
 		 * This means at least one of p and s is no longer suitable.
 		 * Forget p, fix s and re-resolve p.
-		 *
-		 * Verify that insert_between did not mess with our invariant
-		 * for a pre-insert node.
 		 */
-		assert(atomic_load_explicit(&n->pred, memory_order_relaxed) == 0);
-		assert(atomic_load_explicit(&n->succ, memory_order_relaxed) == 0);
-		assert(atomic_load_explicit(&n->refcnt, memory_order_relaxed) == 1);
 
 		/* Forget p. */
 		deref_release(q_head, p, 1);
@@ -816,10 +857,13 @@ ll_insert_before(struct ll_head *q_head, struct ll_elem *n,
 	}
 
 	/*
-	 * We have succesfully inserted n.  Release our references on p and s.
+	 * We have succesfully inserted n.
+	 * Release our references on n, p and s.
 	 */
 	deref_release(q_head, p, 1);
 	deref_release(q_head, s, 1);
+	deref_release(q_head, n, 1);
+	return 1;
 }
 
 /*
@@ -829,7 +873,7 @@ ll_insert_before(struct ll_head *q_head, struct ll_elem *n,
  * This ensures relative ordering between calls to
  * insert_before(q,n,rel) and insert_after(q,n,pred(rel)).
  */
-void
+int
 ll_insert_after(struct ll_head *q_head, struct ll_elem *n, struct ll_elem *rel)
 {
 	struct ll_elem	*q, *s, *p, *p_;
@@ -840,14 +884,14 @@ ll_insert_after(struct ll_head *q_head, struct ll_elem *n, struct ll_elem *rel)
 	assert(rel == ptr_clear(rel));
 
 	/*
-	 * Initial state:
-	 * - n is only referenced by us (borrowed reference from caller),
-	 * - n has no successor or predecessor (note that NULL is an
-	 *   illegal value in the queue).
+	 * Mark n for insert.  If this fails, n is either on a queue or
+	 * being inserted/deleted.
+	 *
+	 * Required that n is properly initialized.
 	 */
-	atomic_init(&n->refcnt, 1);
-	atomic_init(&n->pred, 0);
-	atomic_init(&n->succ, 0);
+	if (!insert_lock(n))
+		return 0;
+	deref_acquire(n, 1);
 
 	/* This is insert_after, so rel is the predecessor. */
 	s = NULL;
@@ -871,13 +915,7 @@ ll_insert_after(struct ll_head *q_head, struct ll_elem *n, struct ll_elem *rel)
 		 * Insert failed.
 		 * This means at least one of p and s is no longer suitable.
 		 * Forget s, fix p and re-resolve s.
-		 *
-		 * Verify that insert_between did not mess with our invariant
-		 * for a pre-insert node.
 		 */
-		assert(atomic_load_explicit(&n->pred, memory_order_relaxed) == 0);
-		assert(atomic_load_explicit(&n->succ, memory_order_relaxed) == 0);
-		assert(atomic_load_explicit(&n->refcnt, memory_order_relaxed) == 1);
 
 		/* Forget s. */
 		deref_release(q_head, s, 1);
@@ -896,16 +934,19 @@ ll_insert_after(struct ll_head *q_head, struct ll_elem *n, struct ll_elem *rel)
 	}
 
 	/*
-	 * We have succesfully inserted n.  Release our references on p and s.
+	 * We have succesfully inserted n.
+	 * Release our references on n, p and s.
 	 */
 	deref_release(q_head, p, 1);
 	deref_release(q_head, s, 1);
+	deref_release(q_head, n, 1);
+	return 1;
 }
 
 /*
  * Insert n at the head of the list.
  */
-void
+int
 ll_insert_head(struct ll_head *q_head, struct ll_elem *n)
 {
 	struct ll_elem	*q, *s;
@@ -915,14 +956,14 @@ ll_insert_head(struct ll_head *q_head, struct ll_elem *n)
 	assert(n == ptr_clear(n));
 
 	/*
-	 * Initial state:
-	 * - n is only referenced by us (borrowed reference from caller),
-	 * - n has no successor or predecessor (note that NULL is an
-	 *   illegal value in the queue).
+	 * Mark n for insert.  If this fails, n is either on a queue or
+	 * being inserted/deleted.
+	 *
+	 * Required that n is properly initialized.
 	 */
-	atomic_init(&n->refcnt, 1);
-	atomic_init(&n->pred, 0);
-	atomic_init(&n->succ, 0);
+	if (!insert_lock(n))
+		return 0;
+	deref_acquire(n, 1);
 
 	s = ptr_clear(succ(q_head, q));
 
@@ -939,13 +980,7 @@ ll_insert_head(struct ll_head *q_head, struct ll_elem *n)
 		/*
 		 * Insert failed.
 		 * This means s is no longer suitable.
-		 *
-		 * Verify that insert_between did not mess with our invariant
-		 * for a pre-insert node.
 		 */
-		assert(atomic_load_explicit(&n->pred, memory_order_relaxed) == 0);
-		assert(atomic_load_explicit(&n->succ, memory_order_relaxed) == 0);
-		assert(atomic_load_explicit(&n->refcnt, memory_order_relaxed) == 1);
 
 		/* Re-resolve s. */
 		deref_release(q_head, s, 1);
@@ -953,15 +988,17 @@ ll_insert_head(struct ll_head *q_head, struct ll_elem *n)
 	}
 
 	/*
-	 * We have succesfully inserted n.  Release our reference on s.
+	 * We have succesfully inserted n.  Release our reference on n and s.
 	 */
 	deref_release(q_head, s, 1);
+	deref_release(q_head, n, 1);
+	return 1;
 }
 
 /*
  * Insert n at the tail of the list.
  */
-void
+int
 ll_insert_tail(struct ll_head *q_head, struct ll_elem *n)
 {
 	struct ll_elem	*q, *p;
@@ -971,14 +1008,14 @@ ll_insert_tail(struct ll_head *q_head, struct ll_elem *n)
 	assert(n == ptr_clear(n));
 
 	/*
-	 * Initial state:
-	 * - n is only referenced by us (borrowed reference from caller),
-	 * - n has no successor or predecessor (note that NULL is an
-	 *   illegal value in the queue).
+	 * Mark n for insert.  If this fails, n is either on a queue or
+	 * being inserted/deleted.
+	 *
+	 * Required that n is properly initialized.
 	 */
-	atomic_init(&n->refcnt, 1);
-	atomic_init(&n->pred, 0);
-	atomic_init(&n->succ, 0);
+	if (!insert_lock(n))
+		return 0;
+	deref_acquire(n, 1);
 
 	p = ptr_clear(pred(q_head, q));
 
@@ -995,13 +1032,7 @@ ll_insert_tail(struct ll_head *q_head, struct ll_elem *n)
 		/*
 		 * Insert failed.
 		 * This means p is no longer suitable.
-		 *
-		 * Verify that insert_between did not mess with our invariant
-		 * for a pre-insert node.
 		 */
-		assert(atomic_load_explicit(&n->pred, memory_order_relaxed) == 0);
-		assert(atomic_load_explicit(&n->succ, memory_order_relaxed) == 0);
-		assert(atomic_load_explicit(&n->refcnt, memory_order_relaxed) == 1);
 
 		/* Re-resolve s. */
 		deref_release(q_head, p, 1);
@@ -1009,9 +1040,11 @@ ll_insert_tail(struct ll_head *q_head, struct ll_elem *n)
 	}
 
 	/*
-	 * We have succesfully inserted n.  Release our reference on p.
+	 * We have succesfully inserted n.  Release our reference on n and p.
 	 */
 	deref_release(q_head, p, 1);
+	deref_release(q_head, n, 1);
+	return 1;
 }
 
 /*

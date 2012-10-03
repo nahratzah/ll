@@ -14,10 +14,8 @@ main()
 		LL_INIT_ENTRY(&data[i].entry);
 	}
 
-	for (i = 0; i < N; i++) {
+	for (i = 0; i < N; i++)
 		LL_PUSH_BACK(objlist, &list, &data[i]);
-		LL_RELEASE(objlist, &list, &data[i]);
-	}
 
 	for (i = 0, o = LL_FIRST(objlist, &list);
 	    i < N;
