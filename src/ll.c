@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <ll.h>
+#include <ilias/net2/ll.h>
 #include <assert.h>
 #include <stdint.h>
 
@@ -545,6 +545,7 @@ restart:
 
 	/* Acquire deletion lock. */
 	p_ = p;
+	p = ptr_clear(p);
 	while (!atomic_compare_exchange_weak_explicit(&n->pred,
 	    (uintptr_t*)&p_, (uintptr_t)p | FLAGGED,
 	    memory_order_relaxed, memory_order_relaxed)) {
@@ -563,7 +564,8 @@ restart:
 			goto restart;
 		}
 
-		assert(ptr_clear(p_) == p && ((uintptr_t)p_ & MASK) == DEREF);
+		assert(ptr_clear(p_) == p);
+		assert(((uintptr_t)p_ & MASK) == DEREF);
 		p_ = p;
 		SPINWAIT();
 	}
@@ -584,7 +586,7 @@ restart:
 	 * Loop the list forward, clearing up references until our refcount
 	 * becomes 1 or the list is exhausted.
 	 */
-	i = succ(q_head, n);
+	i = ptr_clear(succ(q_head, n));
 	while (atomic_load_explicit(&n->refcnt, memory_order_relaxed) > 1) {
 		/* If i points at n, update its pred pointer. */
 		if (ptr_clear((struct ll_elem*)atomic_load_explicit(&i->pred,
@@ -597,7 +599,7 @@ restart:
 
 		/* Skip to next element. */
 		i_ = i;
-		i = succ(q_head, i);
+		i = ptr_clear(succ(q_head, i));
 		deref_release(q_head, i_, 1);
 	}
 	deref_release(q_head, i, 1);
