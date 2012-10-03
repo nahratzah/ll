@@ -14,7 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <ilias/net2/ll.h>
+#include <ll.h>
 #include <assert.h>
 #include <stdint.h>
 
