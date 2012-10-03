@@ -612,7 +612,6 @@ restart:
 		}
 
 		assert(ptr_clear(p_) == p);
-		assert(((uintptr_t)p_ & MASK) == DEREF);
 		p_ = p;
 		SPINWAIT();
 	}
@@ -665,10 +664,14 @@ unlink_release(struct ll_head *q_head, struct ll_elem *n)
 	/* Release our reference. */
 	deref_release(q_head, n, 1);
 
-	/* Clear out the pred and succ pointers. */
-	deref_release(q_head, (struct ll_elem*)atomic_exchange_explicit(&n->pred, 0,
-	    memory_order_relaxed), 1);
+	/*
+	 * Clear out the pred and succ pointers.
+	 * Set succ to 0 before setting pred to 0, since the former is used to
+	 * detect if the element is on the queue.
+	 */
 	deref_release(q_head, (struct ll_elem*)atomic_exchange_explicit(&n->succ, 0,
+	    memory_order_relaxed), 1);
+	deref_release(q_head, (struct ll_elem*)atomic_exchange_explicit(&n->pred, 0,
 	    memory_order_relaxed), 1);
 }
 
@@ -1053,12 +1056,17 @@ ll_insert_tail(struct ll_head *q_head, struct ll_elem *n)
 struct ll_elem*
 ll_pop_front(struct ll_head *q_head)
 {
-	struct ll_elem	*q, *n;
+	struct ll_elem	*q, *n, *n_;
 
 	q = &q_head->q;
 	while ((n = ptr_clear(succ(q_head, q))) != q) {
-		if (ll_unlink(q_head, n, 1))
-			return n;
+		do {
+			if (ll_unlink(q_head, n, 1))
+				return n;
+			n_ = n;
+			n = ptr_clear(succ(q_head, n_));
+			deref_release(q_head, n_, 1);
+		} while (n != q);
 		deref_release(q_head, n, 1);
 	}
 	deref_release(q_head, n, 1);
@@ -1071,12 +1079,17 @@ ll_pop_front(struct ll_head *q_head)
 struct ll_elem*
 ll_pop_back(struct ll_head *q_head)
 {
-	struct ll_elem	*q, *n;
+	struct ll_elem	*q, *n, *n_;
 
 	q = &q_head->q;
 	while ((n = ptr_clear(pred(q_head, q))) != q) {
-		if (ll_unlink(q_head, n, 1))
-			return n;
+		do {
+			if (ll_unlink(q_head, n, 1))
+				return n;
+			n_ = n;
+			n = ptr_clear(pred(q_head, n_));
+			deref_release(q_head, n_, 1);
+		} while (n != q);
 		deref_release(q_head, n, 1);
 	}
 	deref_release(q_head, n, 1);
