@@ -35,8 +35,10 @@ main()
 	int i;
 	struct objlist list = LL_HEAD_INITIALIZER(list);
 
-	for (i = 0; i < N; i++)
+	for (i = 0; i < N; i++) {
 		data[i].satelite = i;
+		LL_INIT_ENTRY(&data[i].entry);
+	}
 
 	must_succeed(pthread_barrier_init(&barrier, NULL, 3), "pthread_barrier_init");
 

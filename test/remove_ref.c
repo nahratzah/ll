@@ -9,8 +9,10 @@ main()
 	int i;
 	struct obj *o, *next_o = NULL;
 
-	for (i = 0; i < N; i++)
+	for (i = 0; i < N; i++) {
 		data[i].satelite = i;
+		LL_INIT_ENTRY(&data[i].entry);
+	}
 
 	for (i = 0; i < N; i++) {
 		LL_PUSH_BACK(objlist, &list, &data[i]);

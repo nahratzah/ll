@@ -39,6 +39,7 @@ main()
 	for (j = 0; j < T; j++) {
 		for (i = 0; i < N; i++) {
 			data[j][i].satelite = N * j + i;
+			LL_INIT_ENTRY(&data[j][i].entry);
 			LL_PUSH_BACK(objlist, &list, &data[j][i]);
 			LL_RELEASE(objlist, &list, &data[j][i]);
 		}
