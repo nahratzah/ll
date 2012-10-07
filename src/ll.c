@@ -18,6 +18,55 @@
 #include <assert.h>
 #include <stdint.h>
 
+
+/*
+ * Invariants.
+ * Since this is a lock-free algorithm, these invariants must hold at all time.
+ *
+ * Definitions:
+ * S		-- the set of elements in the list
+ * q_head(s)	-- the head of the list (LL_HEAD)
+ * n		-- the node we are observing
+ * n->succ	-- the successor value of n
+ * n->pred	-- the predecessor value of n
+ * succ(n)	-- the actual successor of n
+ * pred(n)	-- the actual predecessor of n
+ * tail(n)	-- succ(n) union tail(succ(n))
+ * deleted(n)	-- predicate: n is deleted from S, but still traversable
+ * n not in S	-- n is not on S and not being inserted/removed right now
+ *
+ * [1]	successor is always up-to-date
+ * foreach(n  :  n in S  :  n->succ == succ(n))
+ * [2]	each node is reachable from its predecessors
+ * foreach(n  :  n in S  :  n in tail(n->pred))
+ * [3]	first element description
+ * q_head(n)->succ is the first element in the list
+ * [4]	last element description
+ * foreach(n  :  n in S  :  n->succ == q_head(S)  ==>  n is the last element)
+ * [5]	empty list constraint
+ * q_head(S)->succ == q_head(S)  ==>  S is the empty list
+ * [6]	head of the list may never be deleted
+ * n == q_head(S)  ==>  !deleted(n)
+ * [7]	deleted node is still traversable while referenced
+ * deleted(n)  ==>  n->pred == pred(n)
+ * deleted(n)  ==>  n->succ == succ(n)
+ * [8]	successor constraint on deleted nodes
+ * define: p = pred(n)
+ * !deleted(n)  ==>  p->succ == n
+ * deleted(n)  ==>  n->pred == p
+ * [9]	nodes not on the list have null pointers
+ * n not in S  ==>  n->succ == nil and n->pred == nil
+ * [10]	deletion mark
+ * deleted(n)  ==>  n->pred | FLAGGED
+ * [11]	insert in progress mark
+ * n is being inserted  ==>  n->succ | FLAGGED
+ * [12]	can we insert n?
+ * n can be inserted  ==>  n->succ = nil and !(n->suc | FLAGGED)
+ * [13]	can we unlink n?
+ * n can be unlinked  ==>  n->pred != nil and !(n->pred | FLAGGED)
+ */
+
+
 /*
  * Spinwait instruction.
  * On hyperthread archs, we don't want to hog the cpu if we are spinning.
@@ -116,14 +165,15 @@ deref_release(struct ll_head *q_head, struct ll_elem *e, size_t count)
 static __inline struct ll_elem*
 deref(elem_ptr_t *ptr)
 {
-	uintptr_t e;
+	uintptr_t e, old;
 
 	while ((e = atomic_fetch_or_explicit(ptr, DEREF,
 	    memory_order_relaxed)) & DEREF)
 		SPINWAIT();
 	if (ptr_clear((struct ll_elem*)e) != NULL)
 		deref_acquire((struct ll_elem*)e, 1);
-	atomic_fetch_and_explicit(ptr, ~DEREF, memory_order_relaxed);
+	old = atomic_fetch_and_explicit(ptr, ~DEREF, memory_order_relaxed);
+	assert(old & DEREF);
 	return (struct ll_elem*)e;
 }
 /*
@@ -367,9 +417,18 @@ insert_lock(struct ll_elem *n)
 {
 	uintptr_t zero = 0;
 
-	return (atomic_compare_exchange_strong_explicit(&n->succ,
-	    &zero, FLAGGED,
-	    memory_order_relaxed, memory_order_relaxed));
+	/* Mark succ as flagged, preserving the DEREF bit. */
+	while (!atomic_compare_exchange_weak_explicit(&n->succ, &zero,
+	    FLAGGED | (zero & DEREF),
+	    memory_order_relaxed, memory_order_relaxed)) {
+		if (zero & ~DEREF)
+			return 0;
+	}
+	/* Wait for pred to fall to zero. */
+	while (atomic_load_explicit(&n->pred, memory_order_relaxed) & ~DEREF)
+		SPINWAIT();
+
+	return 1;
 }
 
 /*
@@ -388,7 +447,8 @@ static int
 insert_between(struct ll_head *q_head, struct ll_elem *n,
     struct ll_elem *p, struct ll_elem *s)
 {
-	struct ll_elem	*q, *ps = NULL, *ps_;
+	struct ll_elem	*q, *ps = NULL, *ps_, *old;
+	int		 cas;
 
 	q = &q_head->q;
 	/* Check arguments. */
@@ -397,9 +457,16 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 	assert(p == ptr_clear(p));
 	assert(s == ptr_clear(s));
 	/* Check initial state of n. */
-	assert(atomic_load_explicit(&n->pred, memory_order_relaxed) == 0);
+	assert(ptr_clear((struct ll_elem*)atomic_load_explicit(&n->pred,
+	    memory_order_relaxed)) == NULL);
 	assert(atomic_load_explicit(&n->succ, memory_order_relaxed) == FLAGGED);
 	assert(atomic_load_explicit(&n->refcnt, memory_order_relaxed) > 0);
+	/*
+	 * Give unlink_release() time to update n->pred.
+	 * XXX try and make this an aid function?
+	 */
+	while (atomic_load_explicit(&n->pred, memory_order_relaxed) != 0)
+		SPINWAIT();
 
 	/*
 	 * Assign n->pred, n->succ.
@@ -407,12 +474,19 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 	 * We add a flag to s, to prevent deletion operations from starting
 	 * before we are ready.
 	 */
-	atomic_store_explicit(&n->pred, (uintptr_t)p,
-	    memory_order_relaxed);
-	atomic_store_explicit(&n->succ, (uintptr_t)s | FLAGGED,
-	    memory_order_relaxed);
 	deref_acquire(p, 1);	/* Because n->pred = p. */
 	deref_acquire(s, 1);	/* Because n->succ = s. */
+
+	old = (struct ll_elem*)FLAGGED;
+	cas = ptr_cas(&n->succ, &old,
+	    (struct ll_elem*)((uintptr_t)s | FLAGGED));
+	assert(cas);
+	ptr_clear_deref(&n->succ);
+
+	old = NULL;
+	cas = ptr_cas(&n->pred, &old, p);
+	assert(cas);
+	ptr_clear_deref(&n->pred);
 
 	/* Load bits in p->succ. */
 	ps = deref(&p->succ);
@@ -436,12 +510,16 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 	 * p->succ as well; we simply won the race to do that.
 	 */
 	if (deleted(p)) {
+		uintptr_t	 tmp;
+
 		/*
 		 * Restore old value, note that this operation also clears
 		 * the deref bit, since ps_ will not have that set.
 		 */
-		atomic_store_explicit(&p->succ, (uintptr_t)&ps_,
+		tmp = atomic_exchange_explicit(&p->succ, (uintptr_t)ps_,
 		    memory_order_relaxed);
+		assert((tmp & ~(FLAGGED | DEREF)) == (uintptr_t)n);
+		assert(tmp & DEREF);
 		goto fail;
 	}
 
@@ -463,8 +541,18 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 	return 1;
 
 fail:
-	atomic_store_explicit(&n->pred, 0, memory_order_relaxed);
-	atomic_store_explicit(&n->succ, FLAGGED, memory_order_relaxed);
+	/* Undo setting n->succ. */
+	old = (struct ll_elem*)((uintptr_t)s | FLAGGED);
+	cas = ptr_cas(&n->succ, &old, (struct ll_elem*)FLAGGED);
+	assert(cas);
+	ptr_clear_deref(&n->succ);
+
+	/* Undo setting n->pred. */
+	old = p;
+	cas = ptr_cas(&n->pred, &old, NULL);
+	assert(cas);
+	ptr_clear_deref(&n->pred);
+
 	deref_release(q_head, p, 1);
 	deref_release(q_head, s, 1);
 	deref_release(q_head, ps, 1);
@@ -474,44 +562,38 @@ fail:
 /*
  * Acquire the lock on p->succ.
  *
- * Succeeds once the DEREF bit is set on p->succ and ptr_clear(p->succ) == expect_s.
+ * Succeeds once the DEREF bit is set on p->succ and
+ * ptr_clear(p->succ) == expect_s.
  */
 static int
-unlink_ps_lock(struct ll_head *q_head, struct ll_elem *p, struct ll_elem *expect_s)
+unlink_ps_lock(struct ll_head *q_head, struct ll_elem *p,
+    struct ll_elem *expect_s)
 {
 	struct ll_elem	*ps;
+	int		 clear_deref = 0;
 
+	/* Clear arguments. */
 	p = ptr_clear(p);
 	expect_s = ptr_clear(expect_s);
 
-	/*
-	 * Try to acquire the deref lock, but stop once p->succ doesn't point at
-	 * expect_s.
-	 */
+	/* Acquire deref, canceling once p->succ changes. */
 	do {
 		ps = (struct ll_elem*)atomic_fetch_or_explicit(&p->succ, DEREF,
 		    memory_order_relaxed);
-		if (ptr_clear(ps) != ptr_clear(expect_s))
-			break;
-		SPINWAIT();
-	} while (((uintptr_t)ps & DEREF) &&
-	    ptr_clear(ps) == expect_s);
+		if ((uintptr_t)ps & DEREF)
+			SPINWAIT();
+		else
+			clear_deref = 1;
+	} while (!clear_deref && ptr_clear(ps) == expect_s);
 
-	/*
-	 * If the pointers are the same, we acquired the DEREF bit and p->succ
-	 * has the expected successor.
-	 */
+	/* Test reason for cancelation. */
 	if (ptr_clear(ps) == expect_s) {
-		assert(atomic_load_explicit(&p->succ, memory_order_relaxed) &
-		    DEREF);
+		assert(clear_deref);
 		return 1;
 	}
 
-	/*
-	 * If we acquired the DEREF bit (i.e. we set it while it wasn't already
-	 * set by another thread) clear it now.
-	 */
-	if (!((uintptr_t)ps & DEREF))
+	/* Undo deref acquisition. */
+	if (clear_deref)
 		ptr_clear_deref(&p->succ);
 
 	return 0;
@@ -535,7 +617,7 @@ unlink(struct ll_head *q_head, struct ll_elem *n)
 	assert(n != NULL);
 
 	/*
-	 * Since we hold the reference to n, is cannot be removed completely
+	 * Since we hold the reference to n, it cannot be removed completely
 	 * before we return.
 	 * However it can be that this function was called while n is not on
 	 * the queue, hence test that now and fail if that is the case.
@@ -556,7 +638,14 @@ restart:
 	 */
 	for (;;) {
 		p = pred(q_head, n);
-		assert(ptr_clear(p) != NULL);
+		/*
+		 * p can become null, if we acquired our reference between
+		 * another unlink_release detecting a refcnt of 1 and
+		 * it clearing its pred/succ pointers.
+		 */
+		if (ptr_clear(p) == NULL)
+			return 0;
+
 		if (deleted_ptr(p)) {
 			/* Another thread marked n->pred with deletion. */
 			deref_release(q_head, p, 1);
@@ -655,24 +744,42 @@ restart:
 static void
 unlink_release(struct ll_head *q_head, struct ll_elem *n)
 {
+	struct ll_elem	*p, *s;
+	int		 p_cas, s_cas;
+
 	assert(n == ptr_clear(n));
 
 	/* Wait until the last reference to n, not held by us, goes away. */
 	while (atomic_load_explicit(&n->refcnt, memory_order_relaxed) > 1)
 		SPINWAIT();
 
-	/* Release our reference. */
-	deref_release(q_head, n, 1);
+	s = ptr_clear((struct ll_elem*)atomic_load_explicit(&n->succ,
+	    memory_order_relaxed));
+	p = flag_combine((struct ll_elem*)atomic_load_explicit(&n->pred,
+	    memory_order_relaxed), (struct ll_elem*)FLAGGED);
+	assert(s != NULL && p != NULL);
 
 	/*
 	 * Clear out the pred and succ pointers.
 	 * Set succ to 0 before setting pred to 0, since the former is used to
 	 * detect if the element is on the queue.
+	 *
+	 * Since ptr_cas maintains the FLAGGED bit, clear it manually
+	 * afterwards.
 	 */
-	deref_release(q_head, (struct ll_elem*)atomic_exchange_explicit(&n->succ, 0,
-	    memory_order_relaxed), 1);
-	deref_release(q_head, (struct ll_elem*)atomic_exchange_explicit(&n->pred, 0,
-	    memory_order_relaxed), 1);
+	s_cas = ptr_cas(&n->succ, &s, 0);
+	assert(s_cas);
+	ptr_clear_deref(&n->succ);
+	deref_release(q_head, s, 1);
+
+	p_cas = ptr_cas(&n->pred, &p, 0);
+	assert(p_cas);
+	atomic_fetch_and_explicit(&n->pred, ~FLAGGED, memory_order_relaxed);
+	ptr_clear_deref(&n->pred);
+	deref_release(q_head, p, 1);
+
+	/* Release our reference. */
+	deref_release(q_head, n, 1);
 }
 
 
