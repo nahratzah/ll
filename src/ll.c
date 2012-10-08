@@ -816,7 +816,7 @@ ll_unlink(struct ll_head *q_head, struct ll_elem *n, int wait)
 void
 ll_unlink_release(struct ll_head *q_head, struct ll_elem *n)
 {
-	return unlink_release(q_head, n);
+	unlink_release(q_head, n);
 }
 
 /*
