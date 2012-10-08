@@ -253,7 +253,7 @@ ll_pop_back_##name(struct name *q)					\
 {									\
 	return ll_elem_##name(ll_pop_back(&q->ll_head));		\
 }									\
-static inline size_t							\
+static __inline size_t							\
 ll_size_##name(struct name *q)						\
 {									\
 	return ll_size(&q->ll_head);					\
