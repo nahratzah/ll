@@ -740,9 +740,15 @@ restart:
 	deref_release(q_head, i, 1);
 	return 1;
 }
-/* Wait until the unlinked node is unreferenced. */
+/*
+ * Wait until the unlinked node is unreferenced.
+ *
+ * If inslock is set, this function will atomically acquire the insert lock
+ * on the node.
+ * If inslock is set, the reference held by this function will not be released.
+ */
 static void
-unlink_release(struct ll_head *q_head, struct ll_elem *n)
+unlink_release(struct ll_head *q_head, struct ll_elem *n, int inslock)
 {
 	struct ll_elem	*p, *s;
 	int		 p_cas, s_cas;
@@ -767,19 +773,28 @@ unlink_release(struct ll_head *q_head, struct ll_elem *n)
 	 * Since ptr_cas maintains the FLAGGED bit, clear it manually
 	 * afterwards.
 	 */
-	s_cas = ptr_cas(&n->succ, &s, 0);
+	if (inslock) {
+		uintptr_t ns;
+
+		ns = atomic_fetch_or_explicit(&n->succ, FLAGGED,
+		    memory_order_relaxed);
+		assert(!(ns & FLAGGED));
+		s = (struct ll_elem*)((uintptr_t)s | FLAGGED);
+	}
+	s_cas = ptr_cas(&n->succ, &s, NULL);
 	assert(s_cas);
 	ptr_clear_deref(&n->succ);
 	deref_release(q_head, s, 1);
 
-	p_cas = ptr_cas(&n->pred, &p, 0);
+	p_cas = ptr_cas(&n->pred, &p, NULL);
 	assert(p_cas);
 	atomic_fetch_and_explicit(&n->pred, ~FLAGGED, memory_order_relaxed);
 	ptr_clear_deref(&n->pred);
 	deref_release(q_head, p, 1);
 
 	/* Release our reference. */
-	deref_release(q_head, n, 1);
+	if (!inslock)
+		deref_release(q_head, n, 1);
 }
 
 
@@ -807,7 +822,7 @@ ll_unlink(struct ll_head *q_head, struct ll_elem *n, int wait)
 	if (!unlink(q_head, n))
 		return NULL;
 	if (wait)
-		unlink_release(q_head, n);
+		unlink_release(q_head, n, 0);
 	return n;
 }
 /*
@@ -816,7 +831,7 @@ ll_unlink(struct ll_head *q_head, struct ll_elem *n, int wait)
 void
 ll_unlink_release(struct ll_head *q_head, struct ll_elem *n)
 {
-	unlink_release(q_head, n);
+	unlink_release(q_head, n, 0);
 }
 
 /*
@@ -907,7 +922,7 @@ ll_empty(struct ll_head *q_head)
  */
 int
 ll_insert_before(struct ll_head *q_head, struct ll_elem *n,
-    struct ll_elem *rel)
+    struct ll_elem *rel, int wait)
 {
 	struct ll_elem	*q, *s, *s_, *p;
 
@@ -922,7 +937,9 @@ ll_insert_before(struct ll_head *q_head, struct ll_elem *n,
 	 *
 	 * Required that n is properly initialized.
 	 */
-	if (!insert_lock(n))
+	if (wait)
+		unlink_release(q_head, n, 1);
+	else if (!insert_lock(n))
 		return 0;
 	deref_acquire(n, 1);
 
@@ -984,7 +1001,8 @@ ll_insert_before(struct ll_head *q_head, struct ll_elem *n,
  * insert_before(q,n,rel) and insert_after(q,n,pred(rel)).
  */
 int
-ll_insert_after(struct ll_head *q_head, struct ll_elem *n, struct ll_elem *rel)
+ll_insert_after(struct ll_head *q_head, struct ll_elem *n,
+    struct ll_elem *rel, int wait)
 {
 	struct ll_elem	*q, *s, *p, *p_;
 
@@ -999,7 +1017,9 @@ ll_insert_after(struct ll_head *q_head, struct ll_elem *n, struct ll_elem *rel)
 	 *
 	 * Required that n is properly initialized.
 	 */
-	if (!insert_lock(n))
+	if (wait)
+		unlink_release(q_head, n, 1);
+	else if (!insert_lock(n))
 		return 0;
 	deref_acquire(n, 1);
 
@@ -1057,7 +1077,7 @@ ll_insert_after(struct ll_head *q_head, struct ll_elem *n, struct ll_elem *rel)
  * Insert n at the head of the list.
  */
 int
-ll_insert_head(struct ll_head *q_head, struct ll_elem *n)
+ll_insert_head(struct ll_head *q_head, struct ll_elem *n, int wait)
 {
 	struct ll_elem	*q, *s;
 
@@ -1071,7 +1091,9 @@ ll_insert_head(struct ll_head *q_head, struct ll_elem *n)
 	 *
 	 * Required that n is properly initialized.
 	 */
-	if (!insert_lock(n))
+	if (wait)
+		unlink_release(q_head, n, 1);
+	else if (!insert_lock(n))
 		return 0;
 	deref_acquire(n, 1);
 
@@ -1109,7 +1131,7 @@ ll_insert_head(struct ll_head *q_head, struct ll_elem *n)
  * Insert n at the tail of the list.
  */
 int
-ll_insert_tail(struct ll_head *q_head, struct ll_elem *n)
+ll_insert_tail(struct ll_head *q_head, struct ll_elem *n, int wait)
 {
 	struct ll_elem	*q, *p;
 
@@ -1123,7 +1145,9 @@ ll_insert_tail(struct ll_head *q_head, struct ll_elem *n)
 	 *
 	 * Required that n is properly initialized.
 	 */
-	if (!insert_lock(n))
+	if (wait)
+		unlink_release(q_head, n, 1);
+	else if (!insert_lock(n))
 		return 0;
 	deref_acquire(n, 1);
 
@@ -1161,14 +1185,14 @@ ll_insert_tail(struct ll_head *q_head, struct ll_elem *n)
  * Unlink and return the first node in the list.
  */
 struct ll_elem*
-ll_pop_front(struct ll_head *q_head)
+ll_pop_front(struct ll_head *q_head, int wait)
 {
 	struct ll_elem	*q, *n, *n_;
 
 	q = &q_head->q;
 	while ((n = ptr_clear(succ(q_head, q))) != q) {
 		do {
-			if (ll_unlink(q_head, n, 1))
+			if (ll_unlink(q_head, n, wait))
 				return n;
 			n_ = n;
 			n = ptr_clear(succ(q_head, n_));
@@ -1184,14 +1208,14 @@ ll_pop_front(struct ll_head *q_head)
  * Unlink and return the first node in the list.
  */
 struct ll_elem*
-ll_pop_back(struct ll_head *q_head)
+ll_pop_back(struct ll_head *q_head, int wait)
 {
 	struct ll_elem	*q, *n, *n_;
 
 	q = &q_head->q;
 	while ((n = ptr_clear(pred(q_head, q))) != q) {
 		do {
-			if (ll_unlink(q_head, n, 1))
+			if (ll_unlink(q_head, n, wait))
 				return n;
 			n_ = n;
 			n = ptr_clear(pred(q_head, n_));

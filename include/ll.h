@@ -44,13 +44,13 @@ void		 ll_ref(struct ll_head*, struct ll_elem*);
 void		 ll_release(struct ll_head*, struct ll_elem*);
 int		 ll_empty(struct ll_head*);
 int		 ll_insert_before(struct ll_head*, struct ll_elem*,
-		    struct ll_elem*);
+		    struct ll_elem*, int);
 int		 ll_insert_after(struct ll_head*, struct ll_elem*,
-		    struct ll_elem*);
-int		 ll_insert_head(struct ll_head*, struct ll_elem*);
-int		 ll_insert_tail(struct ll_head*, struct ll_elem*);
-struct ll_elem	*ll_pop_front(struct ll_head*);
-struct ll_elem	*ll_pop_back(struct ll_head*);
+		    struct ll_elem*, int);
+int		 ll_insert_head(struct ll_head*, struct ll_elem*, int);
+int		 ll_insert_tail(struct ll_head*, struct ll_elem*, int);
+struct ll_elem	*ll_pop_front(struct ll_head*, int);
+struct ll_elem	*ll_pop_back(struct ll_head*, int);
 size_t		 ll_size(struct ll_head*);
 
 
@@ -117,12 +117,24 @@ do {									\
 	ll_unlink_##name(head, node)
 #define LL_UNLINK_NOWAIT(name, head, node)				\
 	ll_unlink_nowait_##name(head, node)
-#define LL_UNLINK_WAIT(name, node)					\
-	ll_unlink_wait_##name(node)
+#define LL_UNLINK_WAIT(name, head, node)				\
+	ll_unlink_wait_##name(head, node)
 #define LL_POP_FRONT(name, head)					\
 	ll_pop_front_##name(head)
+#define LL_POP_FRONT_NOWAIT(name, head)					\
+	ll_pop_front_nowait_##name(head)
 #define LL_POP_BACK(name, head)						\
 	ll_pop_back_##name(head)
+#define LL_POP_BACK_NOWAIT(name, head)					\
+	ll_pop_back_nowait_##name(head)
+#define LL_UNLINK_WAIT_INSERT_BEFORE(name, head, node, rel)		\
+	ll_unlink_wait_insert_before_##name(head, node, rel)
+#define LL_UNLINK_WAIT_INSERT_AFTER(name, head, node, rel)		\
+	ll_unlink_wait_insert_after_##name(head, node, rel)
+#define LL_UNLINK_WAIT_INSERT_HEAD(name, head, node)			\
+	ll_unlink_wait_insert_head_##name(head, node)
+#define LL_UNLINK_WAIT_INSERT_TAIL(name, head, node)			\
+	ll_unlink_wait_insert_tail_##name(head, node)
 
 #define LL_FOREACH(var, name, head)					\
 	for ((var) = ll_first_##name(head);				\
@@ -210,23 +222,25 @@ static __inline int							\
 ll_insert_after_##name(struct name *q, struct type *n,			\
     struct type *rel)							\
 {									\
-	return ll_insert_after(&q->ll_head, &n->member, &rel->member);	\
+	return ll_insert_after(&q->ll_head, &n->member,			\
+	    &rel->member, 0);						\
 }									\
 static __inline int							\
 ll_insert_before_##name(struct name *q, struct type *n,			\
     struct type *rel)							\
 {									\
-	return ll_insert_before(&q->ll_head, &n->member, &rel->member);	\
+	return ll_insert_before(&q->ll_head, &n->member,		\
+	    &rel->member, 0);						\
 }									\
 static __inline int							\
 ll_insert_head_##name(struct name *q, struct type *n)			\
 {									\
-	return ll_insert_head(&q->ll_head, &n->member);			\
+	return ll_insert_head(&q->ll_head, &n->member, 0);		\
 }									\
 static __inline int							\
 ll_insert_tail_##name(struct name *q, struct type *n)			\
 {									\
-	return ll_insert_tail(&q->ll_head, &n->member);			\
+	return ll_insert_tail(&q->ll_head, &n->member, 0);		\
 }									\
 static __inline struct type*						\
 ll_unlink_##name(struct name *q, struct type *n)			\
@@ -243,15 +257,53 @@ ll_unlink_wait_##name(struct name *q, struct type *n)			\
 {									\
 	ll_unlink_release(&q->ll_head, &n->member);			\
 }									\
+static __inline void							\
+ll_unlink_wait_insert_tail_##name(struct name *q, struct type *n)	\
+{									\
+	/* Never fails. */						\
+	ll_insert_tail(&q->ll_head, &n->member, 1);			\
+}									\
+static __inline void							\
+ll_unlink_wait_insert_head_##name(struct name *q, struct type *n)	\
+{									\
+	/* Never fails. */						\
+	ll_insert_head(&q->ll_head, &n->member, 1);			\
+}									\
+static __inline void							\
+ll_unlink_wait_insert_after_##name(struct name *q, struct type *n,	\
+    struct type *rel)							\
+{									\
+	/* Never fails. */						\
+	ll_insert_after(&q->ll_head, &n->member,			\
+	    &rel->member, 1);						\
+}									\
+static __inline void							\
+ll_unlink_wait_insert_before_##name(struct name *q, struct type *n,	\
+    struct type *rel)							\
+{									\
+	/* Never fails. */						\
+	ll_insert_before(&q->ll_head, &n->member,			\
+	    &rel->member, 1);						\
+}									\
 static __inline struct type*						\
 ll_pop_front_##name(struct name *q)					\
 {									\
-	return ll_elem_##name(ll_pop_front(&q->ll_head));		\
+	return ll_elem_##name(ll_pop_front(&q->ll_head, 1));		\
 }									\
 static __inline struct type*						\
 ll_pop_back_##name(struct name *q)					\
 {									\
-	return ll_elem_##name(ll_pop_back(&q->ll_head));		\
+	return ll_elem_##name(ll_pop_back(&q->ll_head, 1));		\
+}									\
+static __inline struct type*						\
+ll_pop_front_nowait_##name(struct name *q)				\
+{									\
+	return ll_elem_##name(ll_pop_front(&q->ll_head, 0));		\
+}									\
+static __inline struct type*						\
+ll_pop_back_nowait_##name(struct name *q)				\
+{									\
+	return ll_elem_##name(ll_pop_back(&q->ll_head, 0));		\
 }									\
 static __inline size_t							\
 ll_size_##name(struct name *q)						\
