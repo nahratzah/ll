@@ -138,7 +138,7 @@ static __inline void
 deref_acquire(struct ll_elem *e, size_t count)
 {
 	atomic_fetch_add_explicit(&ptr_clear(e)->refcnt, count,
-	    memory_order_relaxed);
+	    memory_order_acquire);
 }
 /*
  * Release references on element.
@@ -150,7 +150,7 @@ deref_release(struct ll_head *q_head, struct ll_elem *e, size_t count)
 	size_t old;
 
 	old = atomic_fetch_sub_explicit(&ptr_clear(e)->refcnt, count,
-	    memory_order_relaxed);
+	    memory_order_release);
 	assert(old >= count);
 }
 
@@ -168,11 +168,11 @@ deref(elem_ptr_t *ptr)
 	uintptr_t e, old;
 
 	while ((e = atomic_fetch_or_explicit(ptr, DEREF,
-	    memory_order_relaxed)) & DEREF)
+	    memory_order_consume)) & DEREF)
 		SPINWAIT();
 	if (ptr_clear((struct ll_elem*)e) != NULL)
 		deref_acquire((struct ll_elem*)e, 1);
-	old = atomic_fetch_and_explicit(ptr, ~DEREF, memory_order_relaxed);
+	old = atomic_fetch_and_explicit(ptr, ~DEREF, memory_order_release);
 	assert(old & DEREF);
 	return (struct ll_elem*)e;
 }
@@ -222,7 +222,7 @@ ptr_cas(elem_ptr_t *ptr, struct ll_elem **expect, struct ll_elem *set)
 	for (;;) {
 		succes = atomic_compare_exchange_weak_explicit(ptr,
 		    (uintptr_t*)expect, set_,
-		    memory_order_relaxed, memory_order_relaxed);
+		    memory_order_acq_rel, memory_order_relaxed);
 		if (succes)
 			break;
 		if (((uintptr_t)*expect & ~DEREF) != (uintptr_t)old)
@@ -241,7 +241,7 @@ ptr_clear_deref(elem_ptr_t *ptr)
 {
 	uintptr_t	 p;
 
-	p = atomic_fetch_and_explicit(ptr, ~DEREF, memory_order_relaxed);
+	p = atomic_fetch_and_explicit(ptr, ~DEREF, memory_order_release);
 	assert(p & DEREF);
 }
 
@@ -420,7 +420,7 @@ insert_lock(struct ll_elem *n)
 	/* Mark succ as flagged, preserving the DEREF bit. */
 	while (!atomic_compare_exchange_weak_explicit(&n->succ, &zero,
 	    FLAGGED | (zero & DEREF),
-	    memory_order_relaxed, memory_order_relaxed)) {
+	    memory_order_acquire, memory_order_relaxed)) {
 		if (zero & ~DEREF)
 			return 0;
 	}
@@ -517,7 +517,7 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 		 * the deref bit, since ps_ will not have that set.
 		 */
 		tmp = atomic_exchange_explicit(&p->succ, (uintptr_t)ps_,
-		    memory_order_relaxed);
+		    memory_order_release);
 		assert((tmp & ~(FLAGGED | DEREF)) == (uintptr_t)n);
 		assert(tmp & DEREF);
 		goto fail;
@@ -536,7 +536,7 @@ insert_between(struct ll_head *q_head, struct ll_elem *n,
 	/* Update list size. */
 	atomic_fetch_add_explicit(&q_head->size, 1, memory_order_relaxed);
 	/* Clear delete block. */
-	atomic_fetch_and_explicit(&n->succ, ~FLAGGED, memory_order_relaxed);
+	atomic_fetch_and_explicit(&n->succ, ~FLAGGED, memory_order_release);
 
 	return 1;
 
@@ -579,7 +579,7 @@ unlink_ps_lock(struct ll_head *q_head, struct ll_elem *p,
 	/* Acquire deref, canceling once p->succ changes. */
 	do {
 		ps = (struct ll_elem*)atomic_fetch_or_explicit(&p->succ, DEREF,
-		    memory_order_relaxed);
+		    memory_order_acquire);
 		if ((uintptr_t)ps & DEREF)
 			SPINWAIT();
 		else
@@ -684,7 +684,7 @@ restart:
 	p = ptr_clear(p);
 	while (!atomic_compare_exchange_weak_explicit(&n->pred,
 	    (uintptr_t*)&p_, (uintptr_t)p | FLAGGED,
-	    memory_order_relaxed, memory_order_relaxed)) {
+	    memory_order_acq_rel, memory_order_relaxed)) {
 		if (((uintptr_t)p_ & FLAGGED) || ptr_clear(p_) != p) {
 			/* We have to restart or abort. */
 			ptr_clear_deref(&p->succ);
@@ -760,9 +760,9 @@ unlink_release(struct ll_head *q_head, struct ll_elem *n, int inslock)
 		SPINWAIT();
 
 	s = ptr_clear((struct ll_elem*)atomic_load_explicit(&n->succ,
-	    memory_order_relaxed));
+	    memory_order_acquire));
 	p = flag_combine((struct ll_elem*)atomic_load_explicit(&n->pred,
-	    memory_order_relaxed), (struct ll_elem*)FLAGGED);
+	    memory_order_acquire), (struct ll_elem*)FLAGGED);
 	assert(s != NULL && p != NULL);
 
 	/*
@@ -777,9 +777,9 @@ unlink_release(struct ll_head *q_head, struct ll_elem *n, int inslock)
 		uintptr_t ns;
 
 		ns = atomic_fetch_or_explicit(&n->succ, FLAGGED,
-		    memory_order_relaxed);
+		    memory_order_acq_rel);
 		assert(!(ns & FLAGGED));
-		s = (struct ll_elem*)((uintptr_t)s | FLAGGED);
+		s = flag_combine(s, (struct ll_elem*)FLAGGED);
 	}
 	s_cas = ptr_cas(&n->succ, &s, NULL);
 	assert(s_cas);
@@ -788,7 +788,7 @@ unlink_release(struct ll_head *q_head, struct ll_elem *n, int inslock)
 
 	p_cas = ptr_cas(&n->pred, &p, NULL);
 	assert(p_cas);
-	atomic_fetch_and_explicit(&n->pred, ~FLAGGED, memory_order_relaxed);
+	atomic_fetch_and_explicit(&n->pred, ~FLAGGED, memory_order_release);
 	ptr_clear_deref(&n->pred);
 	deref_release(q_head, p, 1);
 
