@@ -62,14 +62,17 @@ size_t		 ll_size(struct ll_head*);
 	struct ll_elem
 
 #define LL_HEAD_INITIALIZER(head)					\
-{{									\
+	{ LL_HEAD_INITIALIZER__HEAD(head.ll_head) }
+
+#define LL_HEAD_INITIALIZER__HEAD(ll_head)				\
+{									\
 	{								\
-		ATOMIC_VAR_INIT((uintptr_t)&head.ll_head),		\
-		ATOMIC_VAR_INIT((uintptr_t)&head.ll_head),		\
+		ATOMIC_VAR_INIT((uintptr_t)&ll_head),			\
+		ATOMIC_VAR_INIT((uintptr_t)&ll_head),			\
 		ATOMIC_VAR_INIT((size_t)2)				\
 	},								\
 	ATOMIC_VAR_INIT((size_t)0)					\
-}}
+}
 
 #define LL_INIT(head)							\
 	LL_INIT__LL_HEAD(&(head)->ll_head)
