@@ -38,6 +38,7 @@ struct ll_head {
 
 struct ll_elem	*ll_unlink(struct ll_head*, struct ll_elem*, int);
 void		 ll_unlink_release(struct ll_head*, struct ll_elem*);
+struct ll_elem	*ll_unlink_robust(struct ll_head*, struct ll_elem*);
 struct ll_elem	*ll_succ(struct ll_head*, struct ll_elem*);
 struct ll_elem	*ll_pred(struct ll_head*, struct ll_elem*);
 void		 ll_ref(struct ll_head*, struct ll_elem*);
@@ -122,6 +123,8 @@ do {									\
 	ll_unlink_nowait_##name(head, node)
 #define LL_UNLINK_WAIT(name, head, node)				\
 	ll_unlink_wait_##name(head, node)
+#define LL_UNLINK_ROBUST(name, head, node)				\
+	ll_unlink_robust_##name(head, node)
 #define LL_POP_FRONT(name, head)					\
 	ll_pop_front_##name(head)
 #define LL_POP_FRONT_NOWAIT(name, head)					\
@@ -249,6 +252,12 @@ static __inline struct type*						\
 ll_unlink_##name(struct name *q, struct type *n)			\
 {									\
 	return ll_elem_##name(ll_unlink(&q->ll_head, &n->member, 1));	\
+}									\
+static __inline struct type*						\
+ll_unlink_robust_##name(struct name *q, struct type *n)			\
+{									\
+	return ll_elem_##name(						\
+	    ll_unlink_robust(&q->ll_head, &n->member));			\
 }									\
 static __inline struct type*						\
 ll_unlink_nowait_##name(struct name *q, struct type *n)			\

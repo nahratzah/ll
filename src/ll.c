@@ -833,6 +833,26 @@ ll_unlink_release(struct ll_head *q_head, struct ll_elem *n)
 {
 	unlink_release(q_head, n, 0);
 }
+/*
+ * Ensure the element is unlinked and will never again be linked.
+ *
+ * Returns n if the element was removed from the list as part of this operation.
+ * Returns null if the element was not on the list.
+ */
+struct ll_elem*
+ll_unlink_robust(struct ll_head *q_head, struct ll_elem *n)
+{
+	for (;;) {
+		if (insert_lock(n))
+			return NULL;
+
+		if (unlink(q_head, n)) {
+			unlink_release(q_head, n, 1);
+			return n;
+		}
+		SPINWAIT();
+	}
+}
 
 /*
  * Find the successor of n.
